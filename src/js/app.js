@@ -62,7 +62,9 @@ function getFormState() {
     travelLen: numVal('travelLen', null, 20),
     numLayers: intVal('numLayers', null, 5),
     startGcode: (document.getElementById('startGcode') || { value: '' }).value,
-    endGcode: (document.getElementById('endGcode') || { value: '' }).value
+    endGcode: (document.getElementById('endGcode') || { value: '' }).value,
+    presetName: ($('presetName') || { value: '' }).value,
+    presetDescription: ($('presetDescription') || { value: '' }).value
   }
 }
 
@@ -103,6 +105,8 @@ function setFormState(state) {
   if (state.numLayers !== undefined) setIf('numLayers', null, state.numLayers)
   if (state.startGcode !== undefined) setIf('startGcode', null, state.startGcode)
   if (state.endGcode !== undefined) setIf('endGcode', null, state.endGcode)
+  if (state.presetName !== undefined) setIf('presetName', null, state.presetName)
+  if (state.presetDescription !== undefined) setIf('presetDescription', null, state.presetDescription)
 }
 
 function setupPresetDropdown() {
@@ -136,6 +140,10 @@ function handleLoadPreset() {
   }
 
   setFormState(preset)
+  // Fill preset name and description from the loaded preset
+  if (preset.name) document.getElementById('presetName').value = preset.name
+  if (preset.description) document.getElementById('presetDescription').value = preset.description
+  
   presetStatus.textContent = `Loaded: ${preset.name}`
   presetStatus.style.color = '#059669'
 }
@@ -176,6 +184,24 @@ function handleDownloadGcode() {
   URL.revokeObjectURL(url)
 }
 
+function handleDownloadJson() {
+  const formState = getFormState()
+  const presetName = formState.presetName || 'untitled'
+  const now = new Date()
+  const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
+  const json = JSON.stringify(formState, null, 2)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  const filename = presetName.replace(/\s+/g, '_').toLowerCase()
+  a.download = `${filename}_${timestamp}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 export async function initializeApp() {
   // Ensure presets are loaded first
   await ensurePresetsLoaded()
@@ -193,4 +219,5 @@ export async function initializeApp() {
   document.getElementById('load-preset-btn').addEventListener('click', handleLoadPreset)
   document.getElementById('generate-btn').addEventListener('click', handleGenerateGcode)
   document.getElementById('download-btn').addEventListener('click', handleDownloadGcode)
+  document.getElementById('download-json-btn').addEventListener('click', handleDownloadJson)
 }

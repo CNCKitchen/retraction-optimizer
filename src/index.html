@@ -173,6 +173,21 @@
                     <label for="endGcode">End G-Code:</label>
                     <textarea id="endGcode" placeholder="Enter end G-code here..."></textarea>
                 </div>
+
+                <h3 style="margin-top: 1rem;">Export Settings</h3>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="presetName">Preset Name:</label>
+                        <input type="text" id="presetName" placeholder="e.g., My Printer Config">
+                    </div>
+                    <div class="field">
+                        <label for="presetDescription">Preset Description:</label>
+                        <input type="text" id="presetDescription" placeholder="e.g., PLA settings for 0.4mm nozzle">
+                    </div>
+                </div>
+                <div class="actions">
+                    <button id="download-json-btn" class="secondary">Download Settings as JSON</button>
+                </div>
             </details>
         </section>
 
