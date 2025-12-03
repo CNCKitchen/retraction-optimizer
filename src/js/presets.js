@@ -1,11 +1,25 @@
-import defaultPreset from '../presets/default.json'
-import prusamk3sPreset from '../presets/prusa-mk3s.json'
-import bambuX1cPreset from '../presets/bambu-x1c.json'
+import manifest from '../presets/manifest.json'
 
-export const PRESETS = {
-  'default': defaultPreset,
-  'prusa-mk3s': prusamk3sPreset,
-  'bambu-x1c': bambuX1cPreset
+const PRESETS = {}
+const PRESET_MANIFEST = {}
+
+// Dynamically import presets based on manifest
+async function loadPresetsFromManifest() {
+  for (const entry of manifest) {
+    try {
+      const preset = await import(`../presets/${entry.file}`)
+      PRESETS[entry.id] = preset.default
+      PRESET_MANIFEST[entry.id] = entry
+    } catch (err) {
+      console.error(`Failed to load preset ${entry.id}:`, err)
+    }
+  }
+}
+
+export async function ensurePresetsLoaded() {
+  if (Object.keys(PRESETS).length === 0) {
+    await loadPresetsFromManifest()
+  }
 }
 
 export function loadPreset(presetKey) {
@@ -14,4 +28,8 @@ export function loadPreset(presetKey) {
 
 export function getPresetNames() {
   return Object.keys(PRESETS)
+}
+
+export function getPresetDisplayName(presetKey) {
+  return PRESET_MANIFEST[presetKey]?.name || presetKey
 }

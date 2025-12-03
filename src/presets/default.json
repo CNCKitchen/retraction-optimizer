@@ -30,6 +30,6 @@
   "segLen": 10,
   "travelLen": 20,
   "numLayers": 5,
-  "startGcode": "",
-  "endGcode": ""
+  "startGcode": "default start",
+  "endGcode": "default end"
 }

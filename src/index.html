@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retraction Optimizer</title>
+    <title>Retraction Optimizer 2</title>
 </head>
 <body>
     <header>
@@ -23,6 +23,7 @@
             </div>
             <div class="actions">
                 <button id="load-preset-btn" class="secondary">Load Preset</button>
+                <span id="preset-status" class="status" aria-live="polite"></span>
             </div>
         </section>
 
@@ -110,19 +111,8 @@
             </div>
         </section>
 
-        <!-- Test Type Section -->
-        <section>
-            <h2>Test Type</h2>
-            <div class="form-grid">
-                <div class="field">
-                    <label for="testMode">Test Mode:</label>
-                    <select id="testMode">
-                        <option value="doe">Linear DOE</option>
-                        <option value="avg">Averaged Retractions</option>
-                    </select>
-                </div>
-            </div>
-        </section>
+        <!-- Test Type: single-option DOE (fixed) -->
+        <!-- Removed selection UI: only DOE is supported -->
 
         <!-- Advanced Settings Section -->
         <section>
