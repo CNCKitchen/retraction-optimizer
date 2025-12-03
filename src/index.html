@@ -31,11 +31,11 @@
         <section class="intro">
             <h2>How it works</h2>
             <p>Configure your printer and filament settings, choose between linear DOE (Design of Experiments) or averaged retraction tests, and generate a test pattern.</p>
-            <ul>
+                <ul>
                 <li><strong>Bed/Hotend Temp:</strong> Nozzle and bed temperatures for the test (in °C)</li>
                 <li><strong>Extrusion Width & Layer Height:</strong> Affects line width and height of printed features</li>
                 <li><strong>Pressure Advance:</strong> Klipper pressure advance (or M572 for Marlin) value</li>
-                <li><strong>Filament Dia & Nozzle Dia:</strong> Used to calculate E values for correct extrusion</li>
+                <li><strong>Flow Factor:</strong> Multiply extrusion to tune flow rate (default 1.00)</li>
                 <li><strong>DOE Settings:</strong> Design of Experiments grid: rows, columns, and line count</li>
             </ul>
         </section>
@@ -61,13 +61,11 @@
                     <input type="number" id="hotendTemp" min="150" max="350" step="5" value="210">
                 </div>
                 <div class="field">
-                    <label for="filamentDia">Filament Dia (mm):</label>
-                    <input type="number" id="filamentDia" min="1" max="4" step="0.05" value="1.75">
+                    <label for="flowFactor">Flow Factor (mult):</label>
+                    <input type="number" id="flowFactor" min="0.5" max="1.5" step="0.01" value="1.00">
+                    <small>Multiply extrusion by this factor (default 1.00)</small>
                 </div>
-                <div class="field">
-                    <label for="nozzleDia">Nozzle Dia (mm):</label>
-                    <input type="number" id="nozzleDia" min="0.2" max="2" step="0.05" value="0.4">
-                </div>
+                <!-- Filament diameter removed: fixed to 1.75 mm and replaced by a flow factor -->
             </div>
         </section>
 
@@ -97,17 +95,22 @@
                     <input type="number" id="travelSpeed" min="20" max="500" step="10" value="100">
                 </div>
                 <div class="field">
-                    <label for="retractDist">Retract Distance (mm):</label>
-                    <input type="number" id="retractDist" min="0" max="20" step="0.5" value="5">
+                    <label for="minDist">Retraction distance (min, mm):</label>
+                    <input type="number" id="minDist" min="0" max="20" step="0.1" value="0.2">
                 </div>
                 <div class="field">
-                    <label for="retractSpeed">Retract Speed (mm/s):</label>
-                    <input type="number" id="retractSpeed" min="5" max="200" step="5" value="40">
+                    <label for="maxDist">Retraction distance (max, mm):</label>
+                    <input type="number" id="maxDist" min="0" max="20" step="0.1" value="1.2">
                 </div>
                 <div class="field">
-                    <label for="unretractExtra">Unretract Extra (mm):</label>
-                    <input type="number" id="unretractExtra" min="-1" max="5" step="0.1" value="0">
+                    <label for="minSpeed">Retraction speed (min, mm/s):</label>
+                    <input type="number" id="minSpeed" min="1" max="500" step="1" value="10">
                 </div>
+                <div class="field">
+                    <label for="maxSpeed">Retraction speed (max, mm/s):</label>
+                    <input type="number" id="maxSpeed" min="1" max="500" step="1" value="80">
+                </div>
+                <!-- Unretract Extra removed; handled by Pressure Advance or tuning outside this tool -->
             </div>
         </section>
 
@@ -132,25 +135,14 @@
                         <input type="number" id="doeLines" min="1" max="20" step="1" value="2">
                     </div>
                     <div class="field">
-                        <label for="doeSegments">Segments per Line:</label>
-                        <input type="number" id="doeSegments" min="2" max="50" step="1" value="5">
+                        <label for="segLen">Segment length (mm):</label>
+                        <input type="number" id="segLen" min="1" max="200" step="0.5" value="10">
                     </div>
                     <div class="field">
-                        <label for="cellWidth">Cell Width (mm):</label>
-                        <input type="number" id="cellWidth" min="1" max="50" step="1" value="10">
+                        <label for="travelLen">Travel length (mm):</label>
+                        <input type="number" id="travelLen" min="1" max="500" step="0.5" value="20">
                     </div>
-                    <div class="field">
-                        <label for="cellHeight">Cell Height (mm):</label>
-                        <input type="number" id="cellHeight" min="1" max="50" step="1" value="10">
-                    </div>
-                    <div class="field">
-                        <label for="avgLineCount">Avg. Line Count:</label>
-                        <input type="number" id="avgLineCount" min="1" max="100" step="1" value="10">
-                    </div>
-                    <div class="field">
-                        <label for="avgLineLength">Avg. Line Length (mm):</label>
-                        <input type="number" id="avgLineLength" min="10" max="500" step="10" value="100">
-                    </div>
+                    <!-- Removed: cellWidth, cellHeight, avgLineCount, avgLineLength (not used by DOE generator) -->
                 </div>
 
                 <h3 style="margin-top: 1rem;">Custom G-Code</h3>

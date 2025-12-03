@@ -32,7 +32,8 @@ export function generateGcodeFromForm(formState) {
     ROW_FONT_SIZE: formState.rowFontSize,
     SPEED_FONT_SIZE: formState.speedFontSize,
     EXTRUSION_WIDTH: formState.extrusionWidth,
-    FILAMENT_DIAMETER: formState.filamentDia,
+    // Filament diameter is fixed to 1.75 mm; use `FLOW_FACTOR` to tune extrusion
+    FILAMENT_DIAMETER: 1.75,
     ROW_GAP: formState.rowGap,
     MARGIN: formState.margin,
     DIST_LABEL_PAD: formState.distLabelPad,

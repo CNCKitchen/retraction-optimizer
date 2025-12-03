@@ -344,10 +344,7 @@
             <input type="number" id="extrusionWidth" step="0.01" value="0.45" />
           </div>
 
-          <div class="field">
-            <label for="filamentDia">Filament diameter (mm)</label>
-            <input type="number" id="filamentDia" step="0.01" value="1.75" />
-          </div>
+          <!-- Filament diameter removed (fixed to 1.75 mm). Use Flow Factor instead. -->
           <div class="field">
             <label for="rowGap">Row gap (mm)</label>
             <input type="number" id="rowGap" step="0.01" value="1.0" />
@@ -952,7 +949,7 @@ M73 Q100 S0`;
         ROW_FONT_SIZE: parseFloat(document.getElementById("rowFontSize").value),
         SPEED_FONT_SIZE: parseFloat(document.getElementById("speedFontSize").value),
         EXTRUSION_WIDTH: parseFloat(document.getElementById("extrusionWidth").value),
-        FILAMENT_DIAMETER: parseFloat(document.getElementById("filamentDia").value),
+        FILAMENT_DIAMETER: 1.75,
         ROW_GAP: parseFloat(document.getElementById("rowGap").value),
         MARGIN: parseFloat(document.getElementById("margin").value),
         DIST_LABEL_PAD: parseFloat(document.getElementById("distLabelPad").value),
@@ -1187,7 +1184,7 @@ M73 Q100 S0`;
     "firstLayerSpeed","printSpeed","travelSpeed",
     "layerHeight","pressureAdvance",
     "firstLayerZ","textSpeed","rowFontSize","speedFontSize",
-    "extrusionWidth","filamentDia","rowGap",
+    "extrusionWidth","rowGap",
     "margin","distLabelPad","linesPerParam",
     "rows","cols","segLen","travelLen","numLayers"
   ];

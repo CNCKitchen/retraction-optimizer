@@ -52,7 +52,6 @@ function getFormState() {
     rowFontSize: numVal('rowFontSize', null, 2.4),
     speedFontSize: numVal('speedFontSize', null, 2.4),
     extrusionWidth: numVal('extrusionWidth', null, 0.45),
-    filamentDia: numVal('filamentDia', null, 1.75),
     rowGap: numVal('rowGap', null, 1.0),
     margin: numVal('margin', null, 5.0),
     distLabelPad: numVal('distLabelPad', null, 1.0),
@@ -93,7 +92,6 @@ function setFormState(state) {
   if (state.rowFontSize !== undefined) setIf('rowFontSize', null, state.rowFontSize)
   if (state.speedFontSize !== undefined) setIf('speedFontSize', null, state.speedFontSize)
   if (state.extrusionWidth !== undefined) setIf('extrusionWidth', null, state.extrusionWidth)
-  if (state.filamentDia !== undefined) setIf('filamentDia', null, state.filamentDia)
   if (state.rowGap !== undefined) setIf('rowGap', null, state.rowGap)
   if (state.margin !== undefined) setIf('margin', null, state.margin)
   if (state.distLabelPad !== undefined) setIf('distLabelPad', null, state.distLabelPad)
