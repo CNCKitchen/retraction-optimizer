@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Retraction DOE G-code Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+      color: #111827;
+    }
+
+    header {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 0.5rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+    header p {
+      margin: 0.3rem 0 0;
+      color: #4b5563;
+      font-size: 0.95rem;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 1rem 2rem;
+    }
+
+    section {
+      margin-top: 1.2rem;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 1rem 1.2rem 1.2rem;
+    }
+
+    h2 {
+      margin: 0 0 0.6rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .intro p {
+      margin: 0.25rem 0;
+      font-size: 0.9rem;
+      color: #374151;
+    }
+
+    .intro ul {
+      margin: 0.4rem 0 0.3rem 1.2rem;
+      padding: 0;
+      font-size: 0.9rem;
+      color: #374151;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.6rem 1rem;
+      margin-top: 0.2rem;
+    }
+
+    @media (max-width: 900px) {
+      .form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .form-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      font-size: 0.85rem;
+    }
+
+    label {
+      color: #374151;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+      background: #ffffff;
+      border-radius: 4px;
+      border: 1px solid #d1d5db;
+      padding: 0.25rem 0.4rem;
+      font-size: 0.85rem;
+      color: #111827;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+    }
+
+    .field small {
+      color: #6b7280;
+      font-size: 0.7rem;
+    }
+
+    details {
+      margin-top: 0.6rem;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 0.4rem;
+      font-size: 0.85rem;
+    }
+
+    details summary {
+      cursor: pointer;
+      color: #4b5563;
+    }
+
+    details .form-grid {
+      margin-top: 0.5rem;
+    }
+
+    .actions {
+      margin-top: 0.7rem;
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
+    }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 4px;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    button.primary {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+
+    button.primary:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+    }
+
+    button.secondary {
+      background: #ffffff;
+      border-color: #d1d5db;
+    }
+
+    button.secondary:hover {
+      background: #f3f4f6;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .status {
+      color: #6b7280;
+    }
+
+    .status.error {
+      color: #b91c1c;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 400px;
+      margin-top: 0.4rem;
+      border-radius: 4px;
+      border: 1px solid #d1d5db;
+      padding: 0.5rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.8rem;
+      resize: vertical;
+      box-sizing: border-box;
+      background: #f9fafb;
+    }
+
+    textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+      background: #ffffff;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Retraction DOE G-code Generator</h1>
+  <p>A small helper tool to generate a retraction distance / speed DOE pattern as G-code.</p>
+</header>
+
+<main>
+  <section class="intro">
+    <h2>What does this tool do?</h2>
+    <p>
+      It creates a matrix of retraction tests where
+      <strong>rows</strong> correspond to different retraction <strong>distances</strong>
+      and <strong>columns</strong> correspond to different retraction <strong>speeds</strong>.
+    </p>
+    <p>
+      The generator:
+    </p>
+    <ul>
+      <li>prints an L-shaped base for labels,</li>
+      <li>adds a thin grid frame around the pattern,</li>
+      <li>prints labels for distance (rows) and speed (columns),</li>
+      <li>and runs a meandering DOE pattern above.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Settings</h2>
+
+    <form id="params-form">
+
+      <!-- Preset selector -->
+      <div class="field" style="margin-bottom: 0.6rem;">
+        <label for="presetSelect">Presets</label>
+        <div style="display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center;">
+          <select id="presetSelect">
+            <option value="">-- None (keep current values) --</option>
+            <!-- Add/change options here, one per preset file -->
+            <option value="bambu_pla_0_4">Bambu PLA 0.4 mm</option>
+            <option value="prusamk4_pla_0_4">Prusa MK4 PLA 0.4 mm</option>
+          </select>
+          <button type="button" id="load-preset-btn" class="secondary">Load preset</button>
+          <span id="preset-status" class="status"></span>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="bedX">Bed size X (mm)</label>
+          <input type="number" id="bedX" step="0.1" value="220" />
+        </div>
+        <div class="field">
+          <label for="bedY">Bed size Y (mm)</label>
+          <input type="number" id="bedY" step="0.1" value="220" />
+        </div>
+        <div class="field">
+          <label for="bedTemp">Bed temp (°C)</label>
+          <input type="number" id="bedTemp" step="1" value="60" />
+        </div>
+
+        <div class="field">
+          <label for="minDist">Min retract distance (mm)</label>
+          <input type="number" id="minDist" step="0.01" value="0.2" />
+        </div>
+        <div class="field">
+          <label for="maxDist">Max retract distance (mm)</label>
+          <input type="number" id="maxDist" step="0.01" value="1.2" />
+        </div>
+        <div class="field">
+          <label for="hotendTemp">Hotend temp (°C)</label>
+          <input type="number" id="hotendTemp" step="1" value="230" />
+        </div>
+
+        <div class="field">
+          <label for="minSpeed">Min retract speed (mm/s)</label>
+          <input type="number" id="minSpeed" step="0.1" value="10" />
+        </div>
+        <div class="field">
+          <label for="maxSpeed">Max retract speed (mm/s)</label>
+          <input type="number" id="maxSpeed" step="0.1" value="80" />
+        </div>
+        <div class="field">
+          <label for="flowFactor">Flow factor</label>
+          <input type="number" id="flowFactor" step="0.01" value="1.00" />
+        </div>
+
+        <div class="field">
+          <label for="firstLayerSpeed">First layer speed (mm/s)</label>
+          <input type="number" id="firstLayerSpeed" step="0.1" value="25" />
+        </div>
+        <div class="field">
+          <label for="printSpeed">Upper DOE speed (mm/s)</label>
+          <input type="number" id="printSpeed" step="0.1" value="50" />
+        </div>
+        <div class="field">
+          <label for="travelSpeed">Travel speed (mm/s)</label>
+          <input type="number" id="travelSpeed" step="0.1" value="150" />
+        </div>
+
+        <div class="field">
+          <label for="layerHeight">Layer height (mm)</label>
+          <input type="number" id="layerHeight" step="0.01" value="0.2" />
+        </div>
+        <div class="field">
+          <label for="pressureAdvance">Pressure advance (PA)</label>
+          <input type="number" id="pressureAdvance" step="0.001" placeholder="leave empty to skip" />
+          <small>Sets both Klipper and Marlin PA commands: <code>pressure_advance = x</code> and <code>M572 Sx</code>.</small>
+        </div>
+      </div>
+
+      <details>
+        <summary>Advanced parameters</summary>
+        <div class="form-grid">
+          <div class="field">
+            <label for="firstLayerZ">First layer Z (mm)</label>
+            <input type="number" id="firstLayerZ" step="0.01" value="0.2" />
+          </div>
+
+          <div class="field">
+            <label for="textSpeed">Text print speed (mm/s)</label>
+            <input type="number" id="textSpeed" step="0.1" value="30" />
+          </div>
+          <div class="field">
+            <label for="rowFontSize">Row font size (mm)</label>
+            <input type="number" id="rowFontSize" step="0.1" value="2.4" />
+          </div>
+
+          <div class="field">
+            <label for="speedFontSize">Speed font size (mm)</label>
+            <input type="number" id="speedFontSize" step="0.1" value="2.4" />
+          </div>
+          <div class="field">
+            <label for="extrusionWidth">Extrusion width (mm)</label>
+            <input type="number" id="extrusionWidth" step="0.01" value="0.45" />
+          </div>
+
+          <div class="field">
+            <label for="filamentDia">Filament diameter (mm)</label>
+            <input type="number" id="filamentDia" step="0.01" value="1.75" />
+          </div>
+          <div class="field">
+            <label for="rowGap">Row gap (mm)</label>
+            <input type="number" id="rowGap" step="0.01" value="1.0" />
+          </div>
+
+          <div class="field">
+            <label for="margin">Margin (mm)</label>
+            <input type="number" id="margin" step="0.1" value="5.0" />
+          </div>
+          <div class="field">
+            <label for="distLabelPad">Distance label pad (mm)</label>
+            <input type="number" id="distLabelPad" step="0.1" value="1.0" />
+          </div>
+
+          <div class="field">
+            <label for="linesPerParam">Lines per parameter (reps)</label>
+            <input type="number" id="linesPerParam" step="1" value="10" />
+          </div>
+          <div class="field">
+            <label for="rows">Rows (distance levels)</label>
+            <input type="number" id="rows" step="1" value="5" />
+          </div>
+          <div class="field">
+            <label for="cols">Columns (speed levels)</label>
+            <input type="number" id="cols" step="1" value="5" />
+          </div>
+
+          <div class="field">
+            <label for="segLen">Segment length (mm)</label>
+            <input type="number" id="segLen" step="0.1" value="10" />
+          </div>
+          <div class="field">
+            <label for="travelLen">Travel length (mm)</label>
+            <input type="number" id="travelLen" step="0.1" value="20" />
+          </div>
+          <div class="field">
+            <label for="numLayers">DOE layers</label>
+            <input type="number" id="numLayers" step="1" value="5" />
+          </div>
+
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="startGcode">Start G-code</label>
+            <textarea id="startGcode" spellcheck="false" style="min-height: 150px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 0.75rem;"></textarea>
+          </div>
+
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="endGcode">End G-code</label>
+            <textarea id="endGcode" spellcheck="false" style="min-height: 150px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 0.75rem;"></textarea>
+          </div>
+        </div>
+      </details>
+
+      <div class="actions">
+        <button type="button" class="primary" id="generate-btn">
+          Generate G-code
+        </button>
+        <button type="button" class="secondary" id="download-btn" disabled>
+          Download .gcode
+        </button>
+        <span id="status" class="status">Ready.</span>
+      </div>
+    </form>
+  </section>
+
+  <section>
+    <h2>G-code Preview</h2>
+    <textarea id="gcode-output" spellcheck="false" placeholder="Generated G-code will appear here…"></textarea>
+  </section>
+</main>
+
+<script>
+  // -----------------------------
+  // Constants / stroke font
+  // -----------------------------
+
+  const CHAR_ADVANCE = 0.9;
+
+  const SIMPLE_FONT = {
+    "0": [[[0.1,0.1],[0.1,0.9]],[[0.1,0.9],[0.7,0.9]],[[0.7,0.9],[0.7,0.1]],[[0.7,0.1],[0.1,0.1]]],
+    "1": [[[0.4,0.1],[0.4,0.9]]],
+    "2": [[[0.1,0.9],[0.7,0.9]],[[0.7,0.9],[0.7,0.5]],[[0.7,0.5],[0.1,0.5]],[[0.1,0.5],[0.1,0.1]],[[0.1,0.1],[0.7,0.1]]],
+    "3": [[[0.1,0.9],[0.7,0.9]],[[0.7,0.9],[0.7,0.1]],[[0.1,0.1],[0.7,0.1]],[[0.1,0.5],[0.7,0.5]]],
+    "4": [[[0.1,0.9],[0.1,0.5]],[[0.1,0.5],[0.7,0.5]],[[0.7,0.9],[0.7,0.1]]],
+    "5": [[[0.7,0.9],[0.1,0.9]],[[0.1,0.9],[0.1,0.5]],[[0.1,0.5],[0.7,0.5]],[[0.7,0.5],[0.7,0.1]],[[0.1,0.1],[0.7,0.1]]],
+    "6": [[[0.7,0.9],[0.1,0.9]],[[0.1,0.9],[0.1,0.1]],[[0.1,0.1],[0.7,0.1]],[[0.7,0.1],[0.7,0.5]],[[0.1,0.5],[0.7,0.5]]],
+    "7": [[[0.1,0.9],[0.7,0.9]],[[0.7,0.9],[0.7,0.1]]],
+    "8": [[[0.1,0.1],[0.1,0.9]],[[0.7,0.1],[0.7,0.9]],[[0.1,0.1],[0.7,0.1]],[[0.1,0.5],[0.7,0.5]],[[0.1,0.9],[0.7,0.9]]],
+    "9": [[[0.1,0.9],[0.7,0.9]],[[0.1,0.5],[0.7,0.5]],[[0.7,0.9],[0.7,0.1]],[[0.1,0.9],[0.1,0.5]]],
+    ".": [[[0.3,0.1],[0.5,0.1]]],
+    "-": [[[0.1,0.5],[0.7,0.5]]]
+  };
+
+  const START_GCODE_RAW = String.raw`M73 P0 R19
+M73 Q0 S21
+M201 X10000 Y10000 Z400 E5000 ; sets maximum accelerations, mm/sec^2
+M203 X350 Y350 Z12 E100 ; sets maximum feedrates, mm / sec
+M204 P7000 R2500 T7000 ; sets acceleration (P, T) and retract acceleration (R), mm/sec^2
+M205 X10.00 Y10.00 Z2.00 E10.00 ; sets the jerk limits, mm/sec
+M205 S0 T0 ; sets the minimum extruding and travel feed rate, mm/sec
+
+M486 S0
+M486 AShape-Box
+M486 S-1
+
+;TYPE:Custom
+M17 ; enable steppers
+M862.1 P0.4 A0 F1 ; nozzle check
+M862.3 P "COREONE" ; printer model check
+M862.5 P2 ; g-code level check
+M862.6 P"Input shaper" ; FW feature check
+M115 U6.3.4+10511
+
+M555 X112.5 Y93.5 W32 H29
+
+G90 ; use absolute coordinates
+M83 ; extruder relative mode
+
+M140 S[bed_temperature] ; set bed temp
+
+M109 R170 ; wait for temp
+
+M84 E ; turn off E motor
+
+G28 ; home all without mesh bed level
+
+M141 S20 ; set nominal chamber temp
+
+M106 S70
+G0 Z40 F10000
+M104 T0 S170
+M190 R[bed_temperature] ; wait for bed temp
+M107
+
+G29 G ; absorb heat
+
+M109 R170 ; wait for MBL temp
+
+M302 S155 ; lower cold extrusion limit to 155C
+
+G1 E-2 F2400 ; retraction
+
+M84 E ; turn off E motor
+
+G29 P9 X208 Y-2.5 W32 H4
+
+;
+; MBL
+;
+M84 E ; turn off E motor
+G29 P1 ; invalidate mbl & probe print area
+G29 P1 X150 Y0 W100 H20 C ; probe near purge place
+G29 P3.2 ; interpolate mbl probes
+G29 P3.13 ; extrapolate mbl outside probe area
+G29 A ; activate mbl
+
+; prepare for purge
+M104 S[hotend_temperature]
+G0 X249 Y-2.5 Z15 F4800 ; move away and ready for the purge
+M109 S[hotend_temperature]
+
+G92 E0
+M569 S0 E ; set spreadcycle mode for extruder
+
+M591 S0 ; disable stuck detection
+
+;
+; Extrude purge line
+;
+G92 E0 ; reset extruder position
+G1 E2 F2400 ; deretraction after the initial one
+G0 E5 X235 Z0.2 F500 ; purge
+G0 X225 E4 F500 ; purge
+G0 X215 E4 F650 ; purge
+G0 X205 E4 F800 ; purge
+G0 X202 Z0.05 F8000 ; wipe, move close to the bed
+M73 P1 R19
+G0 X199 Z0.2 F8000 ; wipe, move quickly away from the bed
+
+M591 R ; restore stuck detection
+
+G92 E0
+M221 S100 ; set flow to 100%
+G21 ; set units to millimeters
+G90 ; use absolute coordinates
+M83 ; use relative distances for extrusion
+M572 S0.036 ; Filament gcode
+
+M142 S36 ; set heatbreak target temp
+M107`;
+
+  const END_GCODE_RAW = String.raw`M107
+;TYPE:Custom
+; Filament-specific end gcode
+G1 Z26 F720 ; Move print head up
+M104 S0 ; turn off temperature
+M140 S0 ; turn off heatbed
+M141 S0 ; disable chamber control
+M107 ; turn off fan
+G1 X242 Y211 F10200 ; park
+G4 ; wait
+M572 S0 ; reset PA
+M84 X Y E ; disable motors
+; max_layer_z = 25
+M73 P100 R0
+M73 Q100 S0`;
+
+  // Initialize textarea defaults with raw gcode on page load
+  window.addEventListener('DOMContentLoaded', function() {
+    const startEl = document.getElementById('startGcode');
+    const endEl = document.getElementById('endGcode');
+    if (startEl && !startEl.value) startEl.value = START_GCODE_RAW;
+    if (endEl && !endEl.value) endEl.value = END_GCODE_RAW;
+  });
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+
+  function linspace(n, vmin, vmax) {
+    if (n <= 1) return [vmin];
+    const step = (vmax - vmin) / (n - 1);
+    const arr = [];
+    for (let i = 0; i < n; i++) {
+      arr.push(vmin + i * step);
+    }
+    return arr;
+  }
+
+  function filamentArea(d) {
+    const r = d / 2.0;
+    return Math.PI * r * r;
+  }
+
+  function ePerMmLine(lineWidth, layerHeight, filamentArea) {
+    const volPerMm = lineWidth * layerHeight;
+    return volPerMm / filamentArea;
+  }
+
+  function checkInBed(x, y, bedX, bedY) {
+    if (x !== null && x !== undefined) {
+      if (x < 0 || x > bedX) {
+        throw new Error(`G-code X move ${x.toFixed(3)} is outside bed [0, ${bedX}]`);
+      }
+    }
+    if (y !== null && y !== undefined) {
+      if (y < 0 || y > bedY) {
+        throw new Error(`G-code Y move ${y.toFixed(3)} is outside bed [0, ${bedY}]`);
+      }
+    }
+  }
+
+  function g1Move({ x = null, y = null, z = null, e = null, f = null, bedX, bedY }) {
+    checkInBed(x, y, bedX, bedY);
+    const parts = ["G1"];
+    if (x !== null && x !== undefined) parts.push(`X${x.toFixed(3)}`);
+    if (y !== null && y !== undefined) parts.push(`Y${y.toFixed(3)}`);
+    if (z !== null && z !== undefined) parts.push(`Z${z.toFixed(3)}`);
+    if (e !== null && e !== undefined) parts.push(`E${e.toFixed(5)}`);
+    if (f !== null && f !== undefined) parts.push(`F${f.toFixed(0)}`);
+    return parts.join(" ");
+  }
+
+  function applyPlaceholders(s, bedTemp, hotendTemp) {
+    return s
+      .replace(/\[bed_temperature\]/g, String(bedTemp))
+      .replace(/\[hotend_temperature\]/g, String(hotendTemp));
+  }
+
+  function retractLinesDoe(dist, speed) {
+    const f = speed * 60.0;
+    return {
+      retract: `G1 E${(-dist).toFixed(5)} F${f.toFixed(0)}`,
+      deretract: `G1 E${dist.toFixed(5)} F${f.toFixed(0)}`
+    };
+  }
+
+  function retractLinesAvg(avgDist, avgSpeed) {
+    const f = avgSpeed * 60.0;
+    const d = avgDist;
+    return {
+      retract: `G1 E${(-d).toFixed(5)} F${f.toFixed(0)}`,
+      deretract: `G1 E${d.toFixed(5)} F${f.toFixed(0)}`
+    };
+  }
+
+  // -----------------------------
+  // Text drawing
+  // -----------------------------
+
+  function drawText(gcode, text, x, y, size, z, cfg, avgRet) {
+    const fPrint = cfg.TEXT_PRINT_SPEED * 60.0;
+    const fTravel = cfg.TRAVEL_SPEED * 60.0;
+    const ePerMm = cfg.E_PER_MM;
+    let cursorX = x;
+
+    for (const ch of text) {
+      if (ch === " ") {
+        cursorX += CHAR_ADVANCE * size;
+        continue;
+      }
+      const glyph = SIMPLE_FONT[ch];
+      if (!glyph) {
+        cursorX += CHAR_ADVANCE * size;
+        continue;
+      }
+      for (const seg of glyph) {
+        const [[x1, y1], [x2, y2]] = seg;
+        const sx = cursorX + x1 * size;
+        const sy = y + y1 * size;
+        const ex = cursorX + x2 * size;
+        const ey = y + y2 * size;
+
+        gcode.push("; Label retract before travel");
+        gcode.push(avgRet.retract);
+        gcode.push(g1Move({ x: sx, y: sy, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+        gcode.push("; Label deretract before stroke");
+        gcode.push(avgRet.deretract);
+
+        const length = Math.hypot(ex - sx, ey - sy);
+        const e = length * ePerMm;
+        gcode.push(g1Move({ x: ex, y: ey, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+      }
+      cursorX += CHAR_ADVANCE * size;
+    }
+  }
+
+  // -----------------------------
+  // Base stripes (L-shaped)
+  // -----------------------------
+
+  function generateLabelBaseLayer(gcode, cfg, params) {
+    const {
+      baseX0, baseY0, originX, originY,
+      leftLabelArea, bottomLabelMargin,
+      patternWidth, patternHeight, z
+    } = params;
+
+    gcode.push(`; --- Label base stripes at Z=${z.toFixed(3)} ---`);
+    const fPrint = cfg.FIRST_LAYER_SPEED * 60.0;
+    const fTravel = cfg.TRAVEL_SPEED * 60.0;
+    const lineSpacing = cfg.EXTRUSION_WIDTH;
+    const ePerMm = cfg.E_PER_MM;
+
+    function fillRect(x0, y0, width, height) {
+      if (width <= 0 || height <= 0) return;
+      gcode.push(`; Base stripe: X${x0.toFixed(3)} Y${y0.toFixed(3)} W${width.toFixed(3)} H${height.toFixed(3)}`);
+      gcode.push(g1Move({ x: x0, y: y0, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+      const nLines = Math.floor(height / lineSpacing) + 1;
+      for (let i = 0; i < nLines; i++) {
+        const y = y0 + i * lineSpacing;
+        const xStart = (i % 2 === 0) ? x0 : x0 + width;
+        const xEnd = (i % 2 === 0) ? x0 + width : x0;
+        gcode.push(g1Move({ x: xStart, y, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+        const length = Math.abs(xEnd - xStart);
+        const e = length * ePerMm;
+        gcode.push(g1Move({ x: xEnd, y, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+      }
+    }
+
+    // Left stripe
+    const leftWidth = leftLabelArea;
+    const leftHeight = patternHeight;
+    const leftX0 = baseX0;
+    const leftY0 = originY;
+    fillRect(leftX0, leftY0, leftWidth, leftHeight);
+
+    // Bottom stripe
+    const bottomWidth = patternWidth;
+    const bottomHeight = bottomLabelMargin;
+    const bottomX0 = originX;
+    const bottomY0 = baseY0;
+    fillRect(bottomX0, bottomY0, bottomWidth, bottomHeight);
+  }
+
+  // -----------------------------
+  // Grid frame
+  // -----------------------------
+
+  function generateGridFrameLayer(gcode, cfg, params) {
+    const { z, originX, originY, rows, cols, rowBlockHeight, patternWidth } = params;
+    gcode.push(`; --- Grid frame layer at Z=${z.toFixed(3)} ---`);
+    const fPrint = cfg.FIRST_LAYER_SPEED * 60.0;
+    const fTravel = cfg.TRAVEL_SPEED * 60.0;
+    const ePerMm = cfg.E_PER_MM;
+
+    const patternHeight = rows * rowBlockHeight - cfg.ROW_GAP;
+    const cellSpanX = cfg.SEGMENT_LENGTH + cfg.TRAVEL_LENGTH;
+
+    const xMin = originX;
+    const xMax = originX + patternWidth;
+    const yMin = originY;
+    const yMax = originY + patternHeight;
+
+    const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED);
+
+    // Outer rectangle
+    gcode.push("; Grid frame: outer rectangle");
+    gcode.push("; Grid retract before travel to outer start");
+    gcode.push(avgRet.retract);
+    gcode.push(g1Move({ x: xMin, y: yMin, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+    gcode.push("; Grid deretract before outer rectangle");
+    gcode.push(avgRet.deretract);
+
+    let length, e;
+
+    // bottom
+    length = xMax - xMin;
+    e = length * ePerMm;
+    gcode.push(g1Move({ x: xMax, y: yMin, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+    // right
+    length = yMax - yMin;
+    e = length * ePerMm;
+    gcode.push(g1Move({ x: xMax, y: yMax, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+    // top
+    length = xMax - xMin;
+    e = length * ePerMm;
+    gcode.push(g1Move({ x: xMin, y: yMax, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+    // left
+    length = yMax - yMin;
+    e = length * ePerMm;
+    gcode.push(g1Move({ x: xMin, y: yMin, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+
+    // Internal verticals
+    gcode.push("; Grid frame: vertical lines between columns");
+    for (let c = 1; c < cols; c++) {
+      const x = originX + c * cellSpanX;
+      gcode.push("; Grid retract before vertical travel");
+      gcode.push(avgRet.retract);
+      gcode.push(g1Move({ x, y: yMin, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+      gcode.push("; Grid deretract before vertical line");
+      gcode.push(avgRet.deretract);
+      length = yMax - yMin;
+      e = length * ePerMm;
+      gcode.push(g1Move({ x, y: yMax, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+    }
+
+    // Internal horizontals
+    gcode.push("; Grid frame: horizontal lines between rows");
+    for (let r = 1; r < rows; r++) {
+      const y = originY + r * rowBlockHeight;
+      gcode.push("; Grid retract before horizontal travel");
+      gcode.push(avgRet.retract);
+      gcode.push(g1Move({ x: xMin, y, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+      gcode.push("; Grid deretract before horizontal line");
+      gcode.push(avgRet.deretract);
+      length = xMax - xMin;
+      e = length * ePerMm;
+      gcode.push(g1Move({ x: xMax, y, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+    }
+  }
+
+  // -----------------------------
+  // DOE pattern
+  // -----------------------------
+
+  function generateDoeLayer(gcode, cfg, params) {
+    const {
+      z, originX, originY, rows, cols,
+      distances, speeds, rowBlockHeight, patternWidth, printSpeed
+    } = params;
+
+    gcode.push(`; --- DOE layer at Z=${z.toFixed(3)} ---`);
+    const fPrint = printSpeed * 60.0;
+    const fTravel = cfg.TRAVEL_SPEED * 60.0;
+    const ePerMm = cfg.E_PER_MM;
+
+    for (let r = 0; r < rows; r++) {
+      const dist = distances[r];
+      const baseYRow = originY + r * rowBlockHeight;
+      gcode.push(`; ===== Distance row ${r+1}/${rows}, dist=${dist.toFixed(3)}mm =====`);
+
+      let xCurrent = originX;
+
+      for (let rep = 0; rep < cfg.LINES_PER_PARAM; rep++) {
+        const repDir = (rep % 2 === 0) ? 1.0 : -1.0;
+        const yLine = baseYRow + rep * cfg.EXTRUSION_WIDTH;
+        if (rep === 0) xCurrent = originX;
+
+        gcode.push(g1Move({ x: xCurrent, y: yLine, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+        gcode.push(`; Row ${r+1}/${rows}, repetition ${rep+1}/${cfg.LINES_PER_PARAM}, dist=${dist.toFixed(3)}mm, dir=${repDir>0?"L->R":"R->L"}`);
+
+        const colOrder = (repDir > 0)
+          ? [...Array(cols).keys()]
+          : [...Array(cols).keys()].reverse();
+
+        for (const c of colOrder) {
+          const speed = speeds[c];
+          const ret = retractLinesDoe(dist, speed);
+          gcode.push(`;   Col ${c+1}/${cols}, speed=${speed.toFixed(1)}mm/s`);
+
+          // 1) extrude segment
+          let xExtrudeEnd = xCurrent + repDir * cfg.SEGMENT_LENGTH;
+          let length = Math.abs(xExtrudeEnd - xCurrent);
+          let e = length * ePerMm;
+          gcode.push(g1Move({ x: xExtrudeEnd, y: yLine, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+          xCurrent = xExtrudeEnd;
+
+          // 2) retract
+          gcode.push(ret.retract);
+
+          // 3) travel
+          let xTravelEnd = xCurrent + repDir * cfg.TRAVEL_LENGTH;
+          gcode.push(g1Move({ x: xTravelEnd, y: yLine, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+          xCurrent = xTravelEnd;
+
+          // 4) de-retract
+          gcode.push(ret.deretract);
+        }
+
+        // final normal print
+        gcode.push(";   Final normal print section at end of repetition line");
+        const xFinal = xCurrent + repDir * cfg.SEGMENT_LENGTH;
+        const lengthFinal = Math.abs(xFinal - xCurrent);
+        const eFinal = lengthFinal * ePerMm;
+        gcode.push(g1Move({ x: xFinal, y: yLine, e: eFinal, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+        xCurrent = xFinal;
+      }
+    }
+  }
+
+  // -----------------------------
+  // Labels
+  // -----------------------------
+
+  function labelPattern(gcode, cfg, params) {
+    const {
+      originX, originY, baseX0, baseY0,
+      rowBlockHeight, patternWidth,
+      distLevels, speedLevels,
+      rowFontSize, speedFontSize,
+      labelGapX, bottomLabelMargin, zLabel
+    } = params;
+
+    const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED);
+
+    // row labels
+    distLevels.forEach((dist, r) => {
+      const text = dist.toFixed(2) + "mm";
+      const textWidth = text.length * CHAR_ADVANCE * rowFontSize;
+      const yCenter = originY + r * rowBlockHeight + rowBlockHeight / 2.0;
+      const yText = yCenter - rowFontSize / 2.0;
+      const xTextNominal = originX - labelGapX - textWidth;
+      const minXText = baseX0 + cfg.DIST_LABEL_PAD;
+      const xText = Math.max(xTextNominal, minXText);
+
+      gcode.push(`; Text label for distance row ${r+1}: ${text}`);
+      drawText(gcode, text, xText, yText, rowFontSize, zLabel, cfg, avgRet);
+    });
+
+    // column labels
+    const cellSpanX = cfg.SEGMENT_LENGTH + cfg.TRAVEL_LENGTH;
+    const yTextBase = baseY0 + (bottomLabelMargin - speedFontSize) / 2.0;
+
+    speedLevels.forEach((speed, c) => {
+      const text = speed.toFixed(0) + "mm/s";
+      const approxWidth = text.length * CHAR_ADVANCE * speedFontSize;
+      const xCellStart = originX + c * cellSpanX;
+      const xCenterTravel = xCellStart + cfg.SEGMENT_LENGTH + cfg.TRAVEL_LENGTH / 2.0;
+      const xText = xCenterTravel - approxWidth / 2.0;
+
+      gcode.push(`; Text label for speed col ${c+1}: ${text}`);
+      drawText(gcode, text, xText, yTextBase, speedFontSize, zLabel, cfg, avgRet);
+    });
+  }
+
+  // -----------------------------
+  // Main generation
+  // -----------------------------
+
+  function generateGcodeFromForm() {
+    const statusEl = document.getElementById("status");
+    const outEl = document.getElementById("gcode-output");
+
+    try {
+      statusEl.textContent = "Generating…";
+      statusEl.classList.remove("error");
+
+      const cfg = {
+        // basic form values
+        BED_SIZE_X: parseFloat(document.getElementById("bedX").value),
+        BED_SIZE_Y: parseFloat(document.getElementById("bedY").value),
+        MIN_RETRACT_DIST: parseFloat(document.getElementById("minDist").value),
+        MAX_RETRACT_DIST: parseFloat(document.getElementById("maxDist").value),
+        MIN_RETRACT_SPEED: parseFloat(document.getElementById("minSpeed").value),
+        MAX_RETRACT_SPEED: parseFloat(document.getElementById("maxSpeed").value),
+        ROWS: parseInt(document.getElementById("rows").value, 10),
+        COLS: parseInt(document.getElementById("cols").value, 10),
+        LINES_PER_PARAM: parseInt(document.getElementById("linesPerParam").value, 10),
+        NUM_DOE_LAYERS: parseInt(document.getElementById("numLayers").value, 10),
+        SEGMENT_LENGTH: parseFloat(document.getElementById("segLen").value),
+        TRAVEL_LENGTH: parseFloat(document.getElementById("travelLen").value),
+        FLOW_FACTOR: parseFloat(document.getElementById("flowFactor").value),
+        BED_TEMP: parseFloat(document.getElementById("bedTemp").value),
+        HOTEND_TEMP: parseFloat(document.getElementById("hotendTemp").value),
+        FIRST_LAYER_SPEED: parseFloat(document.getElementById("firstLayerSpeed").value),
+        PRINT_SPEED: parseFloat(document.getElementById("printSpeed").value),
+        TRAVEL_SPEED: parseFloat(document.getElementById("travelSpeed").value),
+        // advanced
+        LAYER_HEIGHT: parseFloat(document.getElementById("layerHeight").value),
+        FIRST_LAYER_Z: parseFloat(document.getElementById("firstLayerZ").value),
+        TEXT_PRINT_SPEED: parseFloat(document.getElementById("textSpeed").value),
+        ROW_FONT_SIZE: parseFloat(document.getElementById("rowFontSize").value),
+        SPEED_FONT_SIZE: parseFloat(document.getElementById("speedFontSize").value),
+        EXTRUSION_WIDTH: parseFloat(document.getElementById("extrusionWidth").value),
+        FILAMENT_DIAMETER: parseFloat(document.getElementById("filamentDia").value),
+        ROW_GAP: parseFloat(document.getElementById("rowGap").value),
+        MARGIN: parseFloat(document.getElementById("margin").value),
+        DIST_LABEL_PAD: parseFloat(document.getElementById("distLabelPad").value),
+        PRESSURE_ADVANCE: parseFloat(document.getElementById("pressureAdvance").value),
+      };
+
+      // derived
+      cfg.FILAMENT_AREA = filamentArea(cfg.FILAMENT_DIAMETER);
+      const baseEPerMm = ePerMmLine(cfg.EXTRUSION_WIDTH, cfg.LAYER_HEIGHT, cfg.FILAMENT_AREA);
+      cfg.E_PER_MM = baseEPerMm * cfg.FLOW_FACTOR;
+
+      cfg.AVG_RETRACT_DIST = 0.5 * (cfg.MIN_RETRACT_DIST + cfg.MAX_RETRACT_DIST);
+      cfg.AVG_RETRACT_SPEED = 0.5 * (cfg.MIN_RETRACT_SPEED + cfg.MAX_RETRACT_SPEED);
+
+      const g = [];
+      g.push("; Retraction DOE Test");
+      g.push("; Generated by retraction_doe_generator (JS, port of Python)");
+      g.push(`; Retraction distance: ${cfg.MIN_RETRACT_DIST}..${cfg.MAX_RETRACT_DIST} mm`);
+      g.push(`; Retraction speed:    ${cfg.MIN_RETRACT_SPEED}..${cfg.MAX_RETRACT_SPEED} mm/s`);
+      g.push(`; Row repetitions (parallel lines per parameter): ${cfg.LINES_PER_PARAM}`);
+      g.push(`; Flow factor: ${cfg.FLOW_FACTOR.toFixed(3)}`);
+      g.push("; Always prints: grid frame + L-shaped label base + labels.");
+      g.push("");
+
+      const userStartG = document.getElementById('startGcode').value || START_GCODE_RAW;
+      const userEndG = document.getElementById('endGcode').value || END_GCODE_RAW;
+      const startG = applyPlaceholders(userStartG, cfg.BED_TEMP, cfg.HOTEND_TEMP).trim();
+      const endG = applyPlaceholders(userEndG, cfg.BED_TEMP, cfg.HOTEND_TEMP).trim();
+
+      if (startG) {
+        g.push(startG);
+        g.push("");
+        // Insert pressure advance commands for Klipper and Marlin if user provided a numeric value
+        if (Number.isFinite(cfg.PRESSURE_ADVANCE)) {
+          const paVal = cfg.PRESSURE_ADVANCE;
+          g.push(`pressure_advance = ${paVal}`);
+          g.push(`M572 S${paVal}`);
+          g.push("");
+        }
+      }
+
+      const distLevels = linspace(cfg.ROWS, cfg.MIN_RETRACT_DIST, cfg.MAX_RETRACT_DIST);
+      const speedLevels = linspace(cfg.COLS, cfg.MIN_RETRACT_SPEED, cfg.MAX_RETRACT_SPEED);
+
+      // pattern dimensions
+      const patternWidth = cfg.COLS * (cfg.SEGMENT_LENGTH + cfg.TRAVEL_LENGTH) + cfg.SEGMENT_LENGTH;
+      const rowBlockHeight = cfg.LINES_PER_PARAM * cfg.EXTRUSION_WIDTH + cfg.ROW_GAP;
+      const patternHeight = cfg.ROWS * rowBlockHeight - cfg.ROW_GAP;
+
+      const labelGapX = 1.0;
+      const labelGapY = 1.0;
+
+      let maxRowLabelWidth = 0;
+      distLevels.forEach(d => {
+        const w = (d.toFixed(2) + "mm").length * CHAR_ADVANCE * cfg.ROW_FONT_SIZE;
+        if (w > maxRowLabelWidth) maxRowLabelWidth = w;
+      });
+
+      const leftLabelArea = maxRowLabelWidth + labelGapX + cfg.DIST_LABEL_PAD;
+      const bottomLabelMargin = Math.max(cfg.MARGIN, cfg.SPEED_FONT_SIZE + labelGapY);
+
+      const baseWidth = leftLabelArea + patternWidth + cfg.MARGIN;
+      const baseHeight = bottomLabelMargin + patternHeight;
+
+      if (baseWidth > cfg.BED_SIZE_X + 1e-6 || baseHeight > cfg.BED_SIZE_Y + 1e-6) {
+        throw new Error(
+          `Pattern+labels too big for bed: needs ${baseWidth.toFixed(2)} x ${baseHeight.toFixed(2)} mm, ` +
+          `bed is ${cfg.BED_SIZE_X.toFixed(2)} x ${cfg.BED_SIZE_Y.toFixed(2)} mm`
+        );
+      }
+
+      const baseX0 = (cfg.BED_SIZE_X - baseWidth) / 2.0;
+      const baseY0 = (cfg.BED_SIZE_Y - baseHeight) / 2.0;
+      const originX = baseX0 + leftLabelArea;
+      const originY = baseY0 + bottomLabelMargin;
+
+      g.push(`; Centered on bed ${cfg.BED_SIZE_X}x${cfg.BED_SIZE_Y} mm`);
+      g.push(`; Base bbox origin: X${baseX0.toFixed(2)} Y${baseY0.toFixed(2)}`);
+      g.push(`; Pattern origin:   X${originX.toFixed(2)} Y${originY.toFixed(2)}`);
+      g.push(`; Left label area:  ${leftLabelArea.toFixed(2)} mm, Bottom label margin: ${bottomLabelMargin.toFixed(2)} mm`);
+      g.push("");
+
+      const zFirst = cfg.FIRST_LAYER_Z;
+      const zLabels = zFirst + cfg.LAYER_HEIGHT;
+
+      // move to safe Z
+      g.push(g1Move({ z: zFirst, f: cfg.TRAVEL_SPEED * 60.0, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }));
+
+      // first layer: label base + grid + DOE1
+      generateLabelBaseLayer(g, cfg, {
+        baseX0, baseY0, originX, originY,
+        leftLabelArea, bottomLabelMargin,
+        patternWidth, patternHeight, z: zFirst
+      });
+
+      generateGridFrameLayer(g, cfg, {
+        z: zFirst, originX, originY,
+        rows: cfg.ROWS, cols: cfg.COLS,
+        rowBlockHeight, patternWidth
+      });
+
+      g.push("");
+      g.push(`; === DOE Layer 1/${cfg.NUM_DOE_LAYERS} at Z=${zFirst.toFixed(3)}, speed=${cfg.FIRST_LAYER_SPEED}mm/s ===`);
+      generateDoeLayer(g, cfg, {
+        z: zFirst,
+        originX, originY,
+        rows: cfg.ROWS,
+        cols: cfg.COLS,
+        distances: distLevels,
+        speeds: speedLevels,
+        rowBlockHeight,
+        patternWidth,
+        printSpeed: cfg.FIRST_LAYER_SPEED
+      });
+
+      // second layer: labels + DOE2
+      if (cfg.NUM_DOE_LAYERS >= 2) {
+        g.push("");
+        g.push("; --- Printing labels for distances and speeds on second layer ---");
+        labelPattern(g, cfg, {
+          originX, originY,
+          baseX0, baseY0,
+          rowBlockHeight,
+          patternWidth,
+          distLevels,
+          speedLevels,
+          rowFontSize: cfg.ROW_FONT_SIZE,
+          speedFontSize: cfg.SPEED_FONT_SIZE,
+          labelGapX,
+          bottomLabelMargin,
+          zLabel: zLabels
+        });
+
+        g.push("");
+        g.push(`; === DOE Layer 2/${cfg.NUM_DOE_LAYERS} at Z=${zLabels.toFixed(3)}, speed=${cfg.PRINT_SPEED}mm/s ===`);
+        generateDoeLayer(g, cfg, {
+          z: zLabels,
+          originX, originY,
+          rows: cfg.ROWS,
+          cols: cfg.COLS,
+          distances: distLevels,
+          speeds: speedLevels,
+          rowBlockHeight,
+          patternWidth,
+          printSpeed: cfg.PRINT_SPEED
+        });
+      }
+
+      // remaining DOE layers
+      for (let layerIdx = 2; layerIdx < cfg.NUM_DOE_LAYERS; layerIdx++) {
+        const z = zFirst + layerIdx * cfg.LAYER_HEIGHT;
+        g.push("");
+        g.push(`; === DOE Layer ${layerIdx+1}/${cfg.NUM_DOE_LAYERS} at Z=${z.toFixed(3)}, speed=${cfg.PRINT_SPEED}mm/s ===`);
+        generateDoeLayer(g, cfg, {
+          z,
+          originX, originY,
+          rows: cfg.ROWS,
+          cols: cfg.COLS,
+          distances: distLevels,
+          speeds: speedLevels,
+          rowBlockHeight,
+          patternWidth,
+          printSpeed: cfg.PRINT_SPEED
+        });
+      }
+
+      if (endG) {
+        g.push("");
+        g.push(endG);
+      }
+
+      const gcode = g.join("\n") + "\n";
+      outEl.value = gcode;
+      statusEl.textContent = "G-code generated. You can download it now.";
+      document.getElementById("download-btn").disabled = false;
+
+      return gcode;
+    } catch (err) {
+      statusEl.textContent = "Error: " + err.message;
+      statusEl.classList.add("error");
+      document.getElementById("download-btn").disabled = true;
+      throw err;
+    }
+  }
+
+  function makeFilename() {
+    const now = new Date();
+    const pad = (n) => n.toString().padStart(2, "0");
+    const ts = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+    return `retraction_doe_test_${ts}.gcode`;
+  }
+
+  function downloadGcode() {
+    const gcode = document.getElementById("gcode-output").value;
+    if (!gcode.trim()) return;
+    const blob = new Blob([gcode], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = makeFilename();
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById("generate-btn").addEventListener("click", () => {
+    try {
+      generateGcodeFromForm();
+    } catch (_) {
+      // error already shown in status
+    }
+  });
+
+  document.getElementById("download-btn").addEventListener("click", downloadGcode);
+
+  // -----------------------------
+  // Preset loading (one JSON file per preset)
+  // -----------------------------
+
+  // Map preset IDs (from <option value="...">) to JSON file paths
+  const PRESET_FILES = {
+    "bambu_pla_0_4": "C:\Users\stefa\Desktop\retraction-optimizer\page\presets\bambu_pla_0_4.json",
+    "prusamk4_pla_0_4": "presets/prusamk4_pla_0_4.json"
+  };
+
+  // All form field IDs we support in presets
+  const PRESET_FIELD_IDS = [
+    "bedX","bedY","bedTemp",
+    "minDist","maxDist","hotendTemp",
+    "minSpeed","maxSpeed","flowFactor",
+    "firstLayerSpeed","printSpeed","travelSpeed",
+    "layerHeight","pressureAdvance",
+    "firstLayerZ","textSpeed","rowFontSize","speedFontSize",
+    "extrusionWidth","filamentDia","rowGap",
+    "margin","distLabelPad","linesPerParam",
+    "rows","cols","segLen","travelLen","numLayers"
+  ];
+
+  async function loadPreset(presetId) {
+    const presetStatus = document.getElementById("preset-status");
+    if (!presetId) {
+      presetStatus.textContent = "";
+      return;
+    }
+
+    const url = PRESET_FILES[presetId];
+    if (!url) {
+      presetStatus.textContent = "Unknown preset.";
+      return;
+    }
+
+    try {
+      presetStatus.textContent = "Loading preset…";
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error("HTTP " + res.status);
+      }
+      const data = await res.json();
+
+      // allow either {values:{...}} or flat {...}
+      const values = data.values || data;
+      const label = data.label || "";
+
+      PRESET_FIELD_IDS.forEach((id) => {
+        if (Object.prototype.hasOwnProperty.call(values, id)) {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.value = values[id];
+        }
+      });
+
+      // Optional: presets can override start/end gcode
+      if (typeof values.startGcode === "string") {
+        document.getElementById("startGcode").value = values.startGcode;
+      }
+      if (typeof values.endGcode === "string") {
+        document.getElementById("endGcode").value = values.endGcode;
+      }
+
+      presetStatus.textContent = label ? `Loaded preset: ${label}` : "Preset loaded.";
+    } catch (err) {
+      console.error(err);
+      presetStatus.textContent = "Failed to load preset.";
+    }
+  }
+
+  document.getElementById("load-preset-btn").addEventListener("click", () => {
+    const select = document.getElementById("presetSelect");
+    loadPreset(select.value);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retraction Optimizer</title>
+</head>
+<body>
+    <header>
+        <h1>Retraction Optimizer</h1>
+        <p>Generate optimized G-code for retraction testing and filament extrusion calibration</p>
+    </header>
+
+    <main>
+        <!-- Preset Loader -->
+        <section>
+            <h2>Printer Preset</h2>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="preset-select">Select Printer:</label>
+                    <select id="preset-select"></select>
+                </div>
+            </div>
+            <div class="actions">
+                <button id="load-preset-btn" class="secondary">Load Preset</button>
+            </div>
+        </section>
+
+        <!-- Intro Section -->
+        <section class="intro">
+            <h2>How it works</h2>
+            <p>Configure your printer and filament settings, choose between linear DOE (Design of Experiments) or averaged retraction tests, and generate a test pattern.</p>
+            <ul>
+                <li><strong>Bed/Hotend Temp:</strong> Nozzle and bed temperatures for the test (in °C)</li>
+                <li><strong>Extrusion Width & Layer Height:</strong> Affects line width and height of printed features</li>
+                <li><strong>Pressure Advance:</strong> Klipper pressure advance (or M572 for Marlin) value</li>
+                <li><strong>Filament Dia & Nozzle Dia:</strong> Used to calculate E values for correct extrusion</li>
+                <li><strong>DOE Settings:</strong> Design of Experiments grid: rows, columns, and line count</li>
+            </ul>
+        </section>
+
+        <!-- Basic Settings Section -->
+        <section>
+            <h2>Printer & Material</h2>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="bedX">Bed X (mm):</label>
+                    <input type="number" id="bedX" min="10" max="1000" step="10" value="235">
+                </div>
+                <div class="field">
+                    <label for="bedY">Bed Y (mm):</label>
+                    <input type="number" id="bedY" min="10" max="1000" step="10" value="235">
+                </div>
+                <div class="field">
+                    <label for="bedTemp">Bed Temp (°C):</label>
+                    <input type="number" id="bedTemp" min="20" max="200" step="5" value="60">
+                </div>
+                <div class="field">
+                    <label for="hotendTemp">Hotend Temp (°C):</label>
+                    <input type="number" id="hotendTemp" min="150" max="350" step="5" value="210">
+                </div>
+                <div class="field">
+                    <label for="filamentDia">Filament Dia (mm):</label>
+                    <input type="number" id="filamentDia" min="1" max="4" step="0.05" value="1.75">
+                </div>
+                <div class="field">
+                    <label for="nozzleDia">Nozzle Dia (mm):</label>
+                    <input type="number" id="nozzleDia" min="0.2" max="2" step="0.05" value="0.4">
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Settings Section -->
+        <section>
+            <h2>Main Settings</h2>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="layerHeight">Layer Height (mm):</label>
+                    <input type="number" id="layerHeight" min="0.1" max="1" step="0.05" value="0.2">
+                </div>
+                <div class="field">
+                    <label for="extrusionWidth">Extrusion Width (mm):</label>
+                    <input type="number" id="extrusionWidth" min="0.4" max="2" step="0.05" value="0.5">
+                </div>
+                <div class="field">
+                    <label for="pressureAdvance">Pressure Advance (PA):</label>
+                    <input type="number" id="pressureAdvance" min="0" max="1" step="0.001" value="">
+                    <small>Leave empty for none</small>
+                </div>
+                <div class="field">
+                    <label for="printSpeed">Print Speed (mm/s):</label>
+                    <input type="number" id="printSpeed" min="5" max="200" step="5" value="30">
+                </div>
+                <div class="field">
+                    <label for="travelSpeed">Travel Speed (mm/s):</label>
+                    <input type="number" id="travelSpeed" min="20" max="500" step="10" value="100">
+                </div>
+                <div class="field">
+                    <label for="retractDist">Retract Distance (mm):</label>
+                    <input type="number" id="retractDist" min="0" max="20" step="0.5" value="5">
+                </div>
+                <div class="field">
+                    <label for="retractSpeed">Retract Speed (mm/s):</label>
+                    <input type="number" id="retractSpeed" min="5" max="200" step="5" value="40">
+                </div>
+                <div class="field">
+                    <label for="unretractExtra">Unretract Extra (mm):</label>
+                    <input type="number" id="unretractExtra" min="-1" max="5" step="0.1" value="0">
+                </div>
+            </div>
+        </section>
+
+        <!-- Test Type Section -->
+        <section>
+            <h2>Test Type</h2>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="testMode">Test Mode:</label>
+                    <select id="testMode">
+                        <option value="doe">Linear DOE</option>
+                        <option value="avg">Averaged Retractions</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Advanced Settings Section -->
+        <section>
+            <details open>
+                <summary><strong>Advanced Settings</strong></summary>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="doeRows">DOE Rows:</label>
+                        <input type="number" id="doeRows" min="1" max="20" step="1" value="10">
+                    </div>
+                    <div class="field">
+                        <label for="doeColumns">DOE Columns:</label>
+                        <input type="number" id="doeColumns" min="1" max="30" step="1" value="20">
+                    </div>
+                    <div class="field">
+                        <label for="doeLines">Lines per Cell:</label>
+                        <input type="number" id="doeLines" min="1" max="20" step="1" value="2">
+                    </div>
+                    <div class="field">
+                        <label for="doeSegments">Segments per Line:</label>
+                        <input type="number" id="doeSegments" min="2" max="50" step="1" value="5">
+                    </div>
+                    <div class="field">
+                        <label for="cellWidth">Cell Width (mm):</label>
+                        <input type="number" id="cellWidth" min="1" max="50" step="1" value="10">
+                    </div>
+                    <div class="field">
+                        <label for="cellHeight">Cell Height (mm):</label>
+                        <input type="number" id="cellHeight" min="1" max="50" step="1" value="10">
+                    </div>
+                    <div class="field">
+                        <label for="avgLineCount">Avg. Line Count:</label>
+                        <input type="number" id="avgLineCount" min="1" max="100" step="1" value="10">
+                    </div>
+                    <div class="field">
+                        <label for="avgLineLength">Avg. Line Length (mm):</label>
+                        <input type="number" id="avgLineLength" min="10" max="500" step="10" value="100">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 1rem;">Custom G-Code</h3>
+                <div class="field">
+                    <label for="startGcode">Start G-Code:</label>
+                    <textarea id="startGcode" placeholder="Enter start G-code here..."></textarea>
+                </div>
+                <div class="field">
+                    <label for="endGcode">End G-Code:</label>
+                    <textarea id="endGcode" placeholder="Enter end G-code here..."></textarea>
+                </div>
+            </details>
+        </section>
+
+        <!-- Output Section -->
+        <section>
+            <h2>Generated G-Code</h2>
+            <div class="actions">
+                <button id="generate-btn" class="primary">Generate G-Code</button>
+                <button id="download-btn" class="secondary">Download G-Code</button>
+                <span id="status" class="status"></span>
+            </div>
+            <textarea id="output" readonly placeholder="G-code will appear here..."></textarea>
+        </section>
+    </main>
+
+    <script type="module" src="/main.js"></script>
+</body>
+</html>
