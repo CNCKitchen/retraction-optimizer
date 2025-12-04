@@ -93,7 +93,8 @@ export function generateGcodeFromForm(formState) {
 
   const patternWidth = cfg.COLS * (cfg.SEGMENT_LENGTH + cfg.TRAVEL_LENGTH) + cfg.SEGMENT_LENGTH
   const rowBlockHeight = cfg.LINES_PER_PARAM * cfg.EXTRUSION_WIDTH + cfg.ROW_GAP
-  const patternHeight = cfg.ROWS * rowBlockHeight - cfg.ROW_GAP
+  // Add extra extrusion width to pattern height to account for DOE offset and ensure clearance at top
+  const patternHeight = cfg.ROWS * rowBlockHeight - cfg.ROW_GAP + cfg.EXTRUSION_WIDTH
 
   const labelGapX = 1.0
   const labelGapY = 1.0
@@ -219,6 +220,12 @@ export function generateGcodeFromForm(formState) {
       printSpeed: cfg.PRINT_SPEED
     })
   }
+
+  // Final retraction before end G-code
+  const finalRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED)
+  g.push("")
+  g.push("; Final retraction")
+  g.push(finalRet.retract)
 
   if (endG) {
     g.push("")
@@ -383,7 +390,8 @@ function generateGridFrameLayer(gcode, cfg, params) {
   const fTravel = cfg.TRAVEL_SPEED * 60.0
   const ePerMm = cfg.E_PER_MM
 
-  const patternHeight = rows * rowBlockHeight - cfg.ROW_GAP
+  // Add extra extrusion width to pattern height to match the extended frame (same as main calculation)
+  const patternHeight = rows * rowBlockHeight - cfg.ROW_GAP + cfg.EXTRUSION_WIDTH
   const cellSpanX = cfg.SEGMENT_LENGTH + cfg.TRAVEL_LENGTH
 
   const xMin = originX
@@ -453,9 +461,12 @@ function generateDoeLayer(gcode, cfg, params) {
   const fTravel = cfg.TRAVEL_SPEED * 60.0
   const ePerMm = cfg.E_PER_MM
 
+  // Offset DOE patterns up by one extrusion width to avoid overlapping with grid frame
+  const doeYOffset = cfg.EXTRUSION_WIDTH
+  
   for (let r = 0; r < rows; r++) {
     const dist = distances[r]
-    const baseYRow = originY + r * rowBlockHeight
+    const baseYRow = originY + r * rowBlockHeight + doeYOffset
     gcode.push(`; ===== Distance row ${r+1}/${rows}, dist=${dist.toFixed(3)}mm =====`)
 
     let xCurrent = originX
