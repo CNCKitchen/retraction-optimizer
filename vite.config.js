@@ -10,7 +10,5 @@ export default defineConfig({
     port: 5173,
     open: true
   },
-   publicPath: process.env.NODE_ENV === 'production'
-    ? '/retraction-optimizer/'
-    : '/'
+  base: '/retraction-optimizer/',  // Add this 
 })
