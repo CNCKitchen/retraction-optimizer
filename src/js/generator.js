@@ -25,6 +25,11 @@ export function generateGcodeFromForm(formState) {
     FIRST_LAYER_SPEED: formState.firstLayerSpeed,
     PRINT_SPEED: formState.printSpeed,
     TRAVEL_SPEED: formState.travelSpeed,
+    // accelerations (mm/s^2)
+    PRINT_ACCEL: formState.printAccel,
+    RETRACT_ACCEL: formState.retractAccel,
+    TRAVEL_ACCEL: formState.travelAccel,
+    FIRST_LAYER_PRINT_ACCEL: formState.firstLayerPrintAccel,
     // advanced
     LAYER_HEIGHT: formState.layerHeight,
     FIRST_LAYER_Z: formState.firstLayerZ,
@@ -70,6 +75,15 @@ export function generateGcodeFromForm(formState) {
       const paVal = cfg.PRESSURE_ADVANCE
       g.push(`pressure_advance = ${paVal}`)
       g.push(`M572 S${paVal}`)
+      g.push("")
+    }
+    // Emit M204 right after start G-code to set first-layer (or normal) accelerations
+    // If FIRST_LAYER_PRINT_ACCEL is provided (not null), always use it; otherwise use PRINT_ACCEL
+    let useFirstP = cfg.FIRST_LAYER_PRINT_ACCEL !== null && cfg.FIRST_LAYER_PRINT_ACCEL !== undefined ? cfg.FIRST_LAYER_PRINT_ACCEL : cfg.PRINT_ACCEL
+    const useR = Number.isFinite(cfg.RETRACT_ACCEL) ? cfg.RETRACT_ACCEL : ''
+    const useT = Number.isFinite(cfg.TRAVEL_ACCEL) ? cfg.TRAVEL_ACCEL : ''
+    if (Number.isFinite(useFirstP) || useR !== '' || useT !== '') {
+      g.push(`M204 P${useFirstP} R${useR} T${useT}`)
       g.push("")
     }
   }
@@ -144,6 +158,18 @@ export function generateGcodeFromForm(formState) {
     patternWidth,
     printSpeed: cfg.FIRST_LAYER_SPEED
   })
+
+  // Restore normal accelerations after first layer (before second-layer labels/printing)
+  if (cfg.NUM_DOE_LAYERS >= 2) {
+    const normalP = Number.isFinite(cfg.PRINT_ACCEL) ? cfg.PRINT_ACCEL : ''
+    const normalR = Number.isFinite(cfg.RETRACT_ACCEL) ? cfg.RETRACT_ACCEL : ''
+    const normalT = Number.isFinite(cfg.TRAVEL_ACCEL) ? cfg.TRAVEL_ACCEL : ''
+    if (normalP !== '' || normalR !== '' || normalT !== '') {
+      g.push("")
+      g.push(`M204 P${normalP} R${normalR} T${normalT}`)
+      g.push("")
+    }
+  }
 
   if (cfg.NUM_DOE_LAYERS >= 2) {
     g.push("")

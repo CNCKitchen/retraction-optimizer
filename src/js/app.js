@@ -41,6 +41,9 @@ function getFormState() {
     firstLayerSpeed: numVal('firstLayerSpeed', null, 20),
     printSpeed: numVal('printSpeed', null, 50),
     travelSpeed: numVal('travelSpeed', null, 150),
+    printAccel: numVal('printAccel', null, 7000),
+    retractAccel: numVal('retractAccel', null, 2500),
+    travelAccel: numVal('travelAccel', null, 7000),
     layerHeight: numVal('layerHeight', null, 0.2),
     pressureAdvance: (function() {
       const el = $('pressureAdvance')
@@ -61,6 +64,7 @@ function getFormState() {
     segLen: numVal('segLen', 'doeSegments', 10),
     travelLen: numVal('travelLen', null, 20),
     numLayers: intVal('numLayers', null, 5),
+    firstLayerPrintAccel: (function(){ const v = numVal('firstLayerPrintAccel', null, null); return v===null? null : v })(),
     startGcode: (document.getElementById('startGcode') || { value: '' }).value,
     endGcode: (document.getElementById('endGcode') || { value: '' }).value,
     presetName: ($('presetName') || { value: '' }).value,
@@ -87,6 +91,9 @@ function setFormState(state) {
   if (state.firstLayerSpeed !== undefined) setIf('firstLayerSpeed', null, state.firstLayerSpeed)
   if (state.printSpeed !== undefined) setIf('printSpeed', null, state.printSpeed)
   if (state.travelSpeed !== undefined) setIf('travelSpeed', null, state.travelSpeed)
+  if (state.printAccel !== undefined) setIf('printAccel', null, state.printAccel)
+  if (state.retractAccel !== undefined) setIf('retractAccel', null, state.retractAccel)
+  if (state.travelAccel !== undefined) setIf('travelAccel', null, state.travelAccel)
   if (state.layerHeight !== undefined) setIf('layerHeight', null, state.layerHeight)
   if (state.pressureAdvance !== undefined) setIf('pressureAdvance', null, state.pressureAdvance)
   if (state.firstLayerZ !== undefined) setIf('firstLayerZ', null, state.firstLayerZ)
@@ -103,6 +110,7 @@ function setFormState(state) {
   if (state.segLen !== undefined) setIf('segLen', 'doeSegments', state.segLen)
   if (state.travelLen !== undefined) setIf('travelLen', null, state.travelLen)
   if (state.numLayers !== undefined) setIf('numLayers', null, state.numLayers)
+  if (state.firstLayerPrintAccel !== undefined) setIf('firstLayerPrintAccel', null, state.firstLayerPrintAccel)
   if (state.startGcode !== undefined) setIf('startGcode', null, state.startGcode)
   if (state.endGcode !== undefined) setIf('endGcode', null, state.endGcode)
   if (state.presetName !== undefined) setIf('presetName', null, state.presetName)
@@ -140,12 +148,47 @@ function handleLoadPreset() {
   }
 
   setFormState(preset)
-  // Fill preset name and description from the loaded preset
-  if (preset.name) document.getElementById('presetName').value = preset.name
-  if (preset.description) document.getElementById('presetDescription').value = preset.description
+  // Fill preset name and description from the loaded preset (support both 'name'/'description' and 'presetName'/'presetDescription')
+  const presetName = preset.name || preset.presetName
+  const presetDesc = preset.description || preset.presetDescription
+  if (presetName) document.getElementById('presetName').value = presetName
+  if (presetDesc) document.getElementById('presetDescription').value = presetDesc
   
-  presetStatus.textContent = `Loaded: ${preset.name}`
+  presetStatus.textContent = `Loaded: ${presetName || 'Preset'}`
   presetStatus.style.color = '#059669'
+}
+
+function handleUploadJson(event) {
+  const presetStatus = document.getElementById('preset-status')
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = function(e) {
+    try {
+      const json = JSON.parse(e.target.result)
+      setFormState(json)
+      // Fill preset name and description from the uploaded JSON (support both field name styles)
+      const presetName = json.name || json.presetName
+      const presetDesc = json.description || json.presetDescription
+      if (presetName) document.getElementById('presetName').value = presetName
+      if (presetDesc) document.getElementById('presetDescription').value = presetDesc
+      
+      presetStatus.textContent = `Loaded: ${presetName || 'Custom settings'}`
+      presetStatus.style.color = '#059669'
+    } catch (err) {
+      presetStatus.textContent = 'Error parsing JSON: ' + err.message
+      presetStatus.style.color = '#ef4444'
+      console.error(err)
+    }
+  }
+  reader.onerror = function() {
+    presetStatus.textContent = 'Error reading file'
+    presetStatus.style.color = '#ef4444'
+  }
+  reader.readAsText(file)
+  // Reset the input so the same file can be re-uploaded
+  event.target.value = ''
 }
 
 function handleGenerateGcode() {
@@ -220,4 +263,5 @@ export async function initializeApp() {
   document.getElementById('generate-btn').addEventListener('click', handleGenerateGcode)
   document.getElementById('download-btn').addEventListener('click', handleDownloadGcode)
   document.getElementById('download-json-btn').addEventListener('click', handleDownloadJson)
+  document.getElementById('upload-json-input').addEventListener('change', handleUploadJson)
 }
