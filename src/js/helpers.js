@@ -15,7 +15,7 @@ export function filamentArea(d) {
 }
 
 export function ePerMmLine(lineWidth, layerHeight, filamentArea) {
-  const volPerMm = lineWidth * layerHeight * 0.9  // Magic factor 0.9 to account for not filling all the voids
+  const volPerMm = lineWidth * layerHeight * 0.95  // Magic factor 0.9 to account for not filling all the voids
   return volPerMm / filamentArea
 }
 

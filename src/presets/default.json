@@ -1,8 +1,8 @@
 {
   "name": "Default",
-  "description": "Generic 3D printer with standard settings",
-  "bedX": 220,
-  "bedY": 220,
+  "description": "Generic Klipper 3D printer with standard settings",
+  "bedX": 200,
+  "bedY": 200,
   "bedTemp": 60,
   "minDist": 0.2,
   "maxDist": 1.2,
@@ -14,7 +14,7 @@
   "printSpeed": 50,
   "travelSpeed": 150,
   "layerHeight": 0.2,
-  "pressureAdvance": null,
+  "pressureAdvance": 0.03,
   "firstLayerZ": 0.2,
   "textSpeed": 30,
   "rowFontSize": 2.4,
@@ -29,10 +29,10 @@
   "segLen": 10,
   "travelLen": 20,
   "numLayers": 5,
-  "printAccel": 7000,
+  "printAccel": 3000,
   "retractAccel": 2500,
   "travelAccel": 7000,
-  "firstLayerPrintAccel": null,
-  "startGcode": "default start",
-  "endGcode": "default end"
+  "firstLayerPrintAccel": 500,
+  "startGcode": "PRINT_START EXTRUDER=[hotend_temperature] BED=[bed_temperature]",
+  "endGcode": "PRINT_END"
 }

@@ -191,9 +191,26 @@ function handleUploadJson(event) {
   event.target.value = ''
 }
 
+function updateDoeIncrements() {
+  const minDist = parseFloat(document.getElementById('minDist')?.value || 0.2)
+  const maxDist = parseFloat(document.getElementById('maxDist')?.value || 1.2)
+  const minSpeed = parseFloat(document.getElementById('minSpeed')?.value || 10)
+  const maxSpeed = parseFloat(document.getElementById('maxSpeed')?.value || 100)
+  const rows = parseInt(document.getElementById('doeRows')?.value || 5)
+  const cols = parseInt(document.getElementById('doeColumns')?.value || 5)
+  
+  const distIncrement = rows > 1 ? ((maxDist - minDist) / (rows - 1)).toFixed(2) : 0
+  const speedIncrement = cols > 1 ? ((maxSpeed - minSpeed) / (cols - 1)).toFixed(1) : 0
+  
+  const distSpan = document.getElementById('distIncrement')
+  const speedSpan = document.getElementById('speedIncrement')
+  if (distSpan) distSpan.textContent = distIncrement
+  if (speedSpan) speedSpan.textContent = speedIncrement
+}
+
 function handleGenerateGcode() {
-  const statusEl = document.getElementById('status')
   const outEl = document.getElementById('output')
+  const statusEl = document.getElementById('status')
 
   try {
     statusEl.textContent = 'Generating…'
@@ -249,6 +266,16 @@ export async function initializeApp() {
   // Ensure presets are loaded first
   await ensurePresetsLoaded()
 
+  // Load default preset
+  const defaultPreset = loadPreset('default')
+  if (defaultPreset) {
+    setFormState(defaultPreset)
+    const presetSelect = document.getElementById('preset-select')
+    if (presetSelect) presetSelect.value = 'default'
+    const statusEl = document.getElementById('preset-status')
+    if (statusEl) statusEl.textContent = `Loaded: ${getPresetDisplayName('default')}`
+  }
+
   // Initialize gcode textareas with defaults
   const startEl = document.getElementById('startGcode')
   const endEl = document.getElementById('endGcode')
@@ -264,4 +291,17 @@ export async function initializeApp() {
   document.getElementById('download-btn').addEventListener('click', handleDownloadGcode)
   document.getElementById('download-json-btn').addEventListener('click', handleDownloadJson)
   document.getElementById('upload-json-input').addEventListener('change', handleUploadJson)
+  
+  // Add listeners for DOE increment updates
+  const doeInputs = ['minDist', 'maxDist', 'minSpeed', 'maxSpeed', 'doeRows', 'doeColumns']
+  doeInputs.forEach(id => {
+    const el = document.getElementById(id)
+    if (el) {
+      el.addEventListener('input', updateDoeIncrements)
+      el.addEventListener('change', updateDoeIncrements)
+    }
+  })
+  
+  // Initial update
+  updateDoeIncrements()
 }
