@@ -1,0 +1,22 @@
+[
+  {
+    "id": "default",
+    "name": "Default",
+    "file": "default.json"
+  },
+  {
+    "id": "prusa-mk3s",
+    "name": "Prusa MK3S+",
+    "file": "prusa-mk3s.json"
+  },
+  {
+    "id": "bambu-x1c",
+    "name": "Bambu Lab X1C",
+    "file": "bambu-x1c.json"
+  },
+  {
+    "id": "prusa-coreone",
+    "name": "Prusa Core One",
+    "file": "prusa-coreone.json"
+  }
+]
