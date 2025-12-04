@@ -1,27 +1,41 @@
-import manifest from '../presets/manifest.json'
-
 const PRESETS = {}
 const PRESET_MANIFEST = {}
+let manifestLoaded = false
 
 // Dynamically fetch presets based on manifest
 async function loadPresetsFromManifest() {
-  for (const entry of manifest) {
-    try {
-      const response = await fetch(`./presets/${entry.file}`)
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      const preset = await response.json()
-      PRESETS[entry.id] = preset
-      PRESET_MANIFEST[entry.id] = entry
-    } catch (err) {
-      console.error(`Failed to load preset ${entry.id}:`, err)
+  if (manifestLoaded) return
+  
+  try {
+    // Fetch the manifest file
+    const manifestResponse = await fetch('./presets/manifest.json')
+    if (!manifestResponse.ok) {
+      throw new Error(`Failed to load manifest: ${manifestResponse.status}`)
     }
+    const manifest = await manifestResponse.json()
+    
+    // Load each preset
+    for (const entry of manifest) {
+      try {
+        const response = await fetch(`./presets/${entry.file}`)
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        const preset = await response.json()
+        PRESETS[entry.id] = preset
+        PRESET_MANIFEST[entry.id] = entry
+      } catch (err) {
+        console.error(`Failed to load preset ${entry.id}:`, err)
+      }
+    }
+    manifestLoaded = true
+  } catch (err) {
+    console.error(`Failed to load manifest:`, err)
   }
 }
 
 export async function ensurePresetsLoaded() {
-  if (Object.keys(PRESETS).length === 0) {
+  if (!manifestLoaded) {
     await loadPresetsFromManifest()
   }
 }
