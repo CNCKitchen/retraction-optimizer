@@ -296,13 +296,19 @@ function generateLabelBaseLayer(gcode, cfg, params) {
   const cornerY0 = baseY0
 
   // Calculate the bounding box of the entire L-shape for the perimeter
+  // Shrink by one extrusion width to avoid overlap with grid frame
+  const gap = cfg.EXTRUSION_WIDTH
   const lShapeMinX = baseX0
   const lShapeMinY = baseY0
   const lShapeMaxX = originX + patternWidth
   const lShapeMaxY = originY + patternHeight
+  
+  // Inner corner of the L (where it meets the grid) - moved inward by gap
+  const innerCornerX = originX - gap
+  const innerCornerY = originY - gap
 
   // Print perimeter first (single outline around entire L-shape)
-  gcode.push(`; L-shape perimeter for adhesion`)
+  gcode.push(`; L-shape perimeter for adhesion (offset by ${gap.toFixed(3)}mm from grid)`)
   gcode.push(g1Move({ x: lShapeMinX, y: lShapeMinY, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
   
   // Draw perimeter clockwise starting from bottom-left corner
@@ -311,20 +317,20 @@ function generateLabelBaseLayer(gcode, cfg, params) {
   length = lShapeMaxX - lShapeMinX
   e = length * ePerMm
   gcode.push(g1Move({ x: lShapeMaxX, y: lShapeMinY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
-  // Right edge of bottom bar
-  length = originY - lShapeMinY
+  // Right edge of bottom bar (up to the gap before grid)
+  length = innerCornerY - lShapeMinY
   e = length * ePerMm
-  gcode.push(g1Move({ x: lShapeMaxX, y: originY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
-  // Step inward at the L corner
-  length = lShapeMaxX - originX
+  gcode.push(g1Move({ x: lShapeMaxX, y: innerCornerY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  // Step inward at the L corner (left to the gap before grid)
+  length = lShapeMaxX - innerCornerX
   e = length * ePerMm
-  gcode.push(g1Move({ x: originX, y: originY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  gcode.push(g1Move({ x: innerCornerX, y: innerCornerY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
   // Up the inner vertical edge
-  length = lShapeMaxY - originY
+  length = lShapeMaxY - innerCornerY
   e = length * ePerMm
-  gcode.push(g1Move({ x: originX, y: lShapeMaxY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  gcode.push(g1Move({ x: innerCornerX, y: lShapeMaxY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
   // Top edge
-  length = originX - lShapeMinX
+  length = innerCornerX - lShapeMinX
   e = length * ePerMm
   gcode.push(g1Move({ x: lShapeMinX, y: lShapeMaxY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
   // Left edge back to start
@@ -337,7 +343,8 @@ function generateLabelBaseLayer(gcode, cfg, params) {
     if (width <= 0 || height <= 0) return
     gcode.push(`; ${label}: X${x0.toFixed(3)} Y${y0.toFixed(3)} W${width.toFixed(3)} H${height.toFixed(3)}`)
     gcode.push(g1Move({ x: x0, y: y0, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
-    const nLines = Math.floor(height / lineSpacing) + 1
+    // Since height is now an exact multiple of lineSpacing, we need exactly (height / lineSpacing) lines
+    const nLines = Math.round(height / lineSpacing)
     for (let i = 0; i < nLines; i++) {
       const y = y0 + i * lineSpacing
       const xStart = (i % 2 === 0) ? x0 : x0 + width
@@ -349,12 +356,24 @@ function generateLabelBaseLayer(gcode, cfg, params) {
     }
   }
 
-  // Fill bottom-left corner piece
-  fillRect(cornerX0, cornerY0, cornerWidth, cornerHeight, "L-corner fill")
-  // Fill left vertical bar
-  fillRect(leftX0, leftY0, leftWidth, leftHeight, "L-left fill")
-  // Fill bottom horizontal bar
-  fillRect(bottomX0, bottomY0, bottomWidth, bottomHeight, "L-bottom fill")
+  // Shrink fill areas inward by gap on all sides to avoid overlap with perimeter
+  // Corner and bottom bar need gap on top and bottom
+  const cornerFillHeight = Math.floor((bottomLabelMargin - 2*gap) / lineSpacing) * lineSpacing
+  const bottomFillHeight = cornerFillHeight  // Same height as corner
+  
+  // Left bar: extends from top of corner fill up to top of pattern
+  // Calculate where corner fill ends
+  const cornerFillTop = cornerY0 + gap + cornerFillHeight
+  const leftBarStartY = cornerFillTop
+  const leftBarHeight = (originY + patternHeight) - leftBarStartY
+  const leftFillHeight = Math.ceil(leftBarHeight / lineSpacing) * lineSpacing
+  
+  // Bottom-left corner piece (inset by gap on all sides)
+  fillRect(cornerX0 + gap, cornerY0 + gap, cornerWidth - 2*gap, cornerFillHeight, "L-corner fill")
+  // Left vertical bar (inset from left and right, starts where corner ends)
+  fillRect(leftX0 + gap, leftBarStartY, leftWidth - 2*gap, leftFillHeight, "L-left fill")
+  // Bottom horizontal bar (inset from bottom and top, starts at originX)
+  fillRect(bottomX0, bottomY0 + gap, bottomWidth - gap, bottomFillHeight, "L-bottom fill")
 }
 
 function generateGridFrameLayer(gcode, cfg, params) {
