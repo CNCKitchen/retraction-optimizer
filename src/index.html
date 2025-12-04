@@ -3,26 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retraction Optimizer 2</title>
+    <title>Retraction Optimizer</title>
 </head>
 <body>
     <header>
+        <a href="https://cnckitchen.store" target="_blank">
+            <img src="header.jpg" alt="CNC Kitchen Store" style="max-width: 100%; height: auto; display: block;">
+        </a>
         <h1>Retraction Optimizer</h1>
-        <p>Generate optimized G-code for retraction testing and filament extrusion calibration</p>
+        <p>Test Pattern Generator to optimize retraction length and speed</p>
     </header>
 
     <main>
         <!-- Intro Section -->
         <section class="intro">
             <h2>How it works</h2>
-            <p>Configure your printer and filament settings, choose between linear DOE (Design of Experiments) or averaged retraction tests, and generate a test pattern.</p>
-                <ul>
-                <li><strong>Bed/Hotend Temp:</strong> Nozzle and bed temperatures for the test (in °C)</li>
-                <li><strong>Extrusion Width & Layer Height:</strong> Affects line width and height of printed features</li>
-                <li><strong>Pressure Advance:</strong> Klipper pressure advance (or M572 for Marlin) value</li>
-                <li><strong>Flow Factor:</strong> Multiply extrusion to tune flow rate (default 1.00)</li>
-                <li><strong>DOE Settings:</strong> Design of Experiments grid: rows, columns, and line count</li>
-            </ul>
+            <p>Configure your printer and filament settings and generate a test pattern to print. Choose the setting with the least amount of stringing and also the least amount of gaps within the extrusions.</p>
+            
+            <div style="background-color: #fee; border: 3px solid #c00; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0;">
+                <h3 style="color: #c00; margin-top: 0; font-size: 1.3em;">⚠️ IMPORTANT DISCLAIMER</h3>
+                <p style="color: #c00; font-weight: bold; margin-bottom: 0.5rem;">USE AT YOUR OWN RISK!</p>
+                <ul style="color: #900; margin: 0.5rem 0;">
+                    <li>You are solely responsible for monitoring your 3D printer during the entire test print.</li>
+                    <li>The author is NOT liable for any damages to your machine, injuries, or other losses.</li>
+                    <li><strong>Never leave your printer unattended</strong> while running this test.</li>
+                    <li>Always verify the generated G-code is safe for your specific printer before starting.</li>
+                </ul>
+            </div>
         </section>
 
         <!-- Preset Loader -->
@@ -52,11 +59,11 @@
             <div class="form-grid">
                 <div class="field">
                     <label for="bedX">Bed X (mm):</label>
-                    <input type="number" id="bedX" min="10" max="1000" step="10" value="235">
+                    <input type="number" id="bedX" min="10" max="1000" step="10" value="220">
                 </div>
                 <div class="field">
                     <label for="bedY">Bed Y (mm):</label>
-                    <input type="number" id="bedY" min="10" max="1000" step="10" value="235">
+                    <input type="number" id="bedY" min="10" max="1000" step="10" value="220">
                 </div>
                 <div class="field">
                     <label for="bedTemp">Bed Temp (°C):</label>
@@ -72,7 +79,7 @@
                 </div>
                 <div class="field">
                     <label for="extrusionWidth">Extrusion Width (mm):</label>
-                    <input type="number" id="extrusionWidth" min="0.4" max="2" step="0.05" value="0.5">
+                    <input type="number" id="extrusionWidth" min="0.4" max="2" step="0.05" value="0.45">
                 </div>
                 <div class="field">
                     <label for="pressureAdvance">Pressure Advance (PA):</label>
@@ -81,15 +88,15 @@
                 </div>
                 <div class="field">
                     <label for="printSpeed">Print Speed (mm/s):</label>
-                    <input type="number" id="printSpeed" min="5" max="200" step="5" value="30">
+                    <input type="number" id="printSpeed" min="5" max="200" step="5" value="100">
                 </div>
                 <div class="field">
                     <label for="travelSpeed">Travel Speed (mm/s):</label>
-                    <input type="number" id="travelSpeed" min="20" max="500" step="10" value="100">
+                    <input type="number" id="travelSpeed" min="20" max="500" step="10" value="200">
                 </div>
                 <div class="field">
                     <label for="printAccel">Print Accel (mm/s^2):</label>
-                    <input type="number" id="printAccel" min="0" max="20000" step="50" value="7000">
+                    <input type="number" id="printAccel" min="0" max="20000" step="50" value="1000">
                 </div>
                 <div class="field">
                     <label for="retractAccel">Retraction Accel (mm/s^2):</label>
@@ -97,7 +104,7 @@
                 </div>
                 <div class="field">
                     <label for="travelAccel">Travel Accel (mm/s^2):</label>
-                    <input type="number" id="travelAccel" min="0" max="20000" step="50" value="7000">
+                    <input type="number" id="travelAccel" min="0" max="20000" step="50" value="5000">
                 </div>
                 <div class="field">
                     <label for="firstLayerSpeed">First Layer Speed (mm/s):</label>
@@ -105,7 +112,7 @@
                 </div>
                 <div class="field">
                     <label for="firstLayerPrintAccel">First Layer Print Accel (mm/s^2):</label>
-                    <input type="number" id="firstLayerPrintAccel" min="0" max="20000" step="50" value="2500">
+                    <input type="number" id="firstLayerPrintAccel" min="0" max="20000" step="50" value="500">
                 </div>
                 <!-- first-layer retract/travel accel removed; only first-layer PRINT accel is supported -->
                 <div class="field">
@@ -137,7 +144,7 @@
                 </div>
                 <div class="field">
                     <label for="maxSpeed">Retraction speed (max, mm/s):</label>
-                    <input type="number" id="maxSpeed" min="1" max="500" step="1" value="80">
+                    <input type="number" id="maxSpeed" min="1" max="500" step="1" value="100">
                 </div>
                 <!-- Unretract Extra removed; handled by Pressure Advance or tuning outside this tool -->
             </div>
@@ -150,23 +157,23 @@
                 <div class="form-grid">
                     <div class="field">
                         <label for="doeRows">DOE Rows:</label>
-                        <input type="number" id="doeRows" min="1" max="20" step="1" value="10">
+                        <input type="number" id="doeRows" min="1" max="20" step="1" value="5">
                     </div>
                     <div class="field">
                         <label for="doeColumns">DOE Columns:</label>
-                        <input type="number" id="doeColumns" min="1" max="30" step="1" value="20">
+                        <input type="number" id="doeColumns" min="1" max="30" step="1" value="5">
                     </div>
                     <div class="field">
                         <label for="doeLines">Lines per Cell:</label>
-                        <input type="number" id="doeLines" min="1" max="20" step="1" value="2">
+                        <input type="number" id="doeLines" min="1" max="20" step="1" value="12">
                     </div>
                     <div class="field">
                         <label for="segLen">Segment length (mm):</label>
-                        <input type="number" id="segLen" min="1" max="200" step="0.5" value="10">
+                        <input type="number" id="segLen" min="1" max="200" step="0.5" value="15">
                     </div>
                     <div class="field">
                         <label for="travelLen">Travel length (mm):</label>
-                        <input type="number" id="travelLen" min="1" max="500" step="0.5" value="20">
+                        <input type="number" id="travelLen" min="1" max="500" step="0.5" value="15">
                     </div>
                     <div class="field">
                         <label for="numLayers">Number of Layers:</label>
@@ -174,15 +181,15 @@
                     </div>
                     <div class="field">
                         <label for="rowFontSize">Row Font Size (mm):</label>
-                        <input type="number" id="rowFontSize" min="1" max="10" step="0.1" value="2.4">
+                        <input type="number" id="rowFontSize" min="1" max="10" step="0.1" value="3">
                     </div>
                     <div class="field">
                         <label for="speedFontSize">Speed Font Size (mm):</label>
-                        <input type="number" id="speedFontSize" min="1" max="10" step="0.1" value="2.4">
+                        <input type="number" id="speedFontSize" min="1" max="10" step="0.1" value="3">
                     </div>
                     <div class="field">
                         <label for="textSpeed">Text Print Speed (mm/s):</label>
-                        <input type="number" id="textSpeed" min="5" max="200" step="5" value="30">
+                        <input type="number" id="textSpeed" min="5" max="200" step="5" value="20">
                     </div>
                     <!-- Removed: cellWidth, cellHeight, avgLineCount, avgLineLength (not used by DOE generator) -->
                 </div>

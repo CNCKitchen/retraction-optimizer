@@ -29,6 +29,10 @@
   "segLen": 10,
   "travelLen": 20,
   "numLayers": 5,
+  "printAccel": 12000,
+  "retractAccel": 4000,
+  "travelAccel": 15000,
+  "firstLayerPrintAccel": null,
   "startGcode": "",
   "endGcode": ""
 }
