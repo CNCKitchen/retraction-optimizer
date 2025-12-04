@@ -272,15 +272,70 @@ function generateLabelBaseLayer(gcode, cfg, params) {
     patternWidth, patternHeight, z
   } = params
 
-  gcode.push(`; --- Label base stripes at Z=${z.toFixed(3)} ---`)
+  gcode.push(`; --- L-shaped label base at Z=${z.toFixed(3)} ---`)
   const fPrint = cfg.FIRST_LAYER_SPEED * 60.0
   const fTravel = cfg.TRAVEL_SPEED * 60.0
   const lineSpacing = cfg.EXTRUSION_WIDTH
   const ePerMm = cfg.E_PER_MM
 
-  function fillRect(x0, y0, width, height) {
+  // L-shape dimensions: vertical bar (left) + horizontal bar (bottom) connected at corner
+  const leftWidth = leftLabelArea
+  const leftHeight = patternHeight
+  const leftX0 = baseX0
+  const leftY0 = originY
+  
+  const bottomWidth = patternWidth
+  const bottomHeight = bottomLabelMargin
+  const bottomX0 = originX
+  const bottomY0 = baseY0
+  
+  // Corner piece to connect left and bottom
+  const cornerWidth = leftLabelArea
+  const cornerHeight = bottomLabelMargin
+  const cornerX0 = baseX0
+  const cornerY0 = baseY0
+
+  // Calculate the bounding box of the entire L-shape for the perimeter
+  const lShapeMinX = baseX0
+  const lShapeMinY = baseY0
+  const lShapeMaxX = originX + patternWidth
+  const lShapeMaxY = originY + patternHeight
+
+  // Print perimeter first (single outline around entire L-shape)
+  gcode.push(`; L-shape perimeter for adhesion`)
+  gcode.push(g1Move({ x: lShapeMinX, y: lShapeMinY, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  
+  // Draw perimeter clockwise starting from bottom-left corner
+  let length, e
+  // Bottom edge
+  length = lShapeMaxX - lShapeMinX
+  e = length * ePerMm
+  gcode.push(g1Move({ x: lShapeMaxX, y: lShapeMinY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  // Right edge of bottom bar
+  length = originY - lShapeMinY
+  e = length * ePerMm
+  gcode.push(g1Move({ x: lShapeMaxX, y: originY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  // Step inward at the L corner
+  length = lShapeMaxX - originX
+  e = length * ePerMm
+  gcode.push(g1Move({ x: originX, y: originY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  // Up the inner vertical edge
+  length = lShapeMaxY - originY
+  e = length * ePerMm
+  gcode.push(g1Move({ x: originX, y: lShapeMaxY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  // Top edge
+  length = originX - lShapeMinX
+  e = length * ePerMm
+  gcode.push(g1Move({ x: lShapeMinX, y: lShapeMaxY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  // Left edge back to start
+  length = lShapeMaxY - lShapeMinY
+  e = length * ePerMm
+  gcode.push(g1Move({ x: lShapeMinX, y: lShapeMinY, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+
+  // Fill the three rectangles that make up the L-shape
+  function fillRect(x0, y0, width, height, label) {
     if (width <= 0 || height <= 0) return
-    gcode.push(`; Base stripe: X${x0.toFixed(3)} Y${y0.toFixed(3)} W${width.toFixed(3)} H${height.toFixed(3)}`)
+    gcode.push(`; ${label}: X${x0.toFixed(3)} Y${y0.toFixed(3)} W${width.toFixed(3)} H${height.toFixed(3)}`)
     gcode.push(g1Move({ x: x0, y: y0, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
     const nLines = Math.floor(height / lineSpacing) + 1
     for (let i = 0; i < nLines; i++) {
@@ -294,17 +349,12 @@ function generateLabelBaseLayer(gcode, cfg, params) {
     }
   }
 
-  const leftWidth = leftLabelArea
-  const leftHeight = patternHeight
-  const leftX0 = baseX0
-  const leftY0 = originY
-  fillRect(leftX0, leftY0, leftWidth, leftHeight)
-
-  const bottomWidth = patternWidth
-  const bottomHeight = bottomLabelMargin
-  const bottomX0 = originX
-  const bottomY0 = baseY0
-  fillRect(bottomX0, bottomY0, bottomWidth, bottomHeight)
+  // Fill bottom-left corner piece
+  fillRect(cornerX0, cornerY0, cornerWidth, cornerHeight, "L-corner fill")
+  // Fill left vertical bar
+  fillRect(leftX0, leftY0, leftWidth, leftHeight, "L-left fill")
+  // Fill bottom horizontal bar
+  fillRect(bottomX0, bottomY0, bottomWidth, bottomHeight, "L-bottom fill")
 }
 
 function generateGridFrameLayer(gcode, cfg, params) {
