@@ -22,6 +22,8 @@ export function generateGcodeFromForm(formState) {
     FLOW_FACTOR: formState.flowFactor,
     BED_TEMP: formState.bedTemp,
     HOTEND_TEMP: formState.hotendTemp,
+    FIRST_LAYER_FAN_SPEED: formState.firstLayerFanSpeed,
+    FAN_SPEED: formState.fanSpeed,
     FIRST_LAYER_SPEED: formState.firstLayerSpeed,
     PRINT_SPEED: formState.printSpeed,
     TRAVEL_SPEED: formState.travelSpeed,
@@ -84,6 +86,12 @@ export function generateGcodeFromForm(formState) {
     const useT = Number.isFinite(cfg.TRAVEL_ACCEL) ? cfg.TRAVEL_ACCEL : ''
     if (Number.isFinite(useFirstP) || useR !== '' || useT !== '') {
       g.push(`M204 P${useFirstP} R${useR} T${useT}`)
+      g.push("")
+    }
+    // Emit M106 for first layer fan speed (convert percent to 0-255)
+    if (Number.isFinite(cfg.FIRST_LAYER_FAN_SPEED)) {
+      const fanValue = Math.round((cfg.FIRST_LAYER_FAN_SPEED / 100) * 255)
+      g.push(`M106 S${fanValue} ; First layer fan speed ${cfg.FIRST_LAYER_FAN_SPEED}%`)
       g.push("")
     }
   }
@@ -160,7 +168,7 @@ export function generateGcodeFromForm(formState) {
     printSpeed: cfg.FIRST_LAYER_SPEED
   })
 
-  // Restore normal accelerations after first layer (before second-layer labels/printing)
+  // Restore normal accelerations and fan speed after first layer (before second-layer labels/printing)
   if (cfg.NUM_DOE_LAYERS >= 2) {
     const normalP = Number.isFinite(cfg.PRINT_ACCEL) ? cfg.PRINT_ACCEL : ''
     const normalR = Number.isFinite(cfg.RETRACT_ACCEL) ? cfg.RETRACT_ACCEL : ''
@@ -168,6 +176,12 @@ export function generateGcodeFromForm(formState) {
     if (normalP !== '' || normalR !== '' || normalT !== '') {
       g.push("")
       g.push(`M204 P${normalP} R${normalR} T${normalT}`)
+      g.push("")
+    }
+    // Emit M106 for normal fan speed (convert percent to 0-255)
+    if (Number.isFinite(cfg.FAN_SPEED)) {
+      const fanValue = Math.round((cfg.FAN_SPEED / 100) * 255)
+      g.push(`M106 S${fanValue} ; Normal fan speed ${cfg.FAN_SPEED}%`)
       g.push("")
     }
   }

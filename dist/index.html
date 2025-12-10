@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retraction Optimizer</title>
-  <script type="module" crossorigin src="/retraction-optimizer/assets/index-D2Hl_LSy.js"></script>
+  <script type="module" crossorigin src="/retraction-optimizer/assets/index-D4-yJ1dJ.js"></script>
   <link rel="stylesheet" crossorigin href="/retraction-optimizer/assets/index-86DDmWGj.css">
 </head>
 <body>
@@ -21,6 +21,7 @@
         <section class="intro">
             <h2>How it works</h2>
             <p>Configure your printer and filament settings and generate a test pattern to print. Choose the setting with the least amount of stringing and also the least amount of gaps within the extrusions.</p>
+            <p>Use [hotend_temperature] and [bed_temperature] placeholders in your start G-code to automatically insert the configured temperatures.</p>
             
             <div style="background-color: #fee; border: 3px solid #c00; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0;">
                 <h3 style="color: #c00; margin-top: 0; font-size: 1.3em;">⚠️ IMPORTANT DISCLAIMER</h3>
@@ -142,13 +143,19 @@
             <div class="form-grid">
                 <div class="field">
                     <label for="minSpeed">Retraction speed (min, mm/s):</label>
-                    <input type="number" id="minSpeed" min="1" max="500" step="1" value="10">
+                    <input type="number" id="minSpeed" min="1" max="500" step="10" value="10">
                 </div>
                 <div class="field">
                     <label for="maxSpeed">Retraction speed (max, mm/s):</label>
-                    <input type="number" id="maxSpeed" min="1" max="500" step="1" value="100">
+                    <input type="number" id="maxSpeed" min="1" max="500" step="10" value="100">
                 </div>
                 <!-- Unretract Extra removed; handled by Pressure Advance or tuning outside this tool -->
+            </div>
+            <div style="margin-top: 1rem; padding: 1rem; background-color: #f0f0f0; border-radius: 4px;">
+                <p style="margin: 0; font-size: 0.95em;">
+                    <strong>Increment per row:</strong> <span id="distIncrement">0.2</span> mm distance &nbsp;|&nbsp; 
+                    <strong>Increment per column:</strong> <span id="speedIncrement">19</span> mm/s speed
+                </p>
             </div>
         </section>
 

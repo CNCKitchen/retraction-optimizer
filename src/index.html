@@ -88,6 +88,14 @@
                     <small>Leave empty for none</small>
                 </div>
                 <div class="field">
+                    <label for="firstLayerFanSpeed">First Layer Fan Speed (%):</label>
+                    <input type="number" id="firstLayerFanSpeed" min="0" max="100" step="5" value="0">
+                </div>
+                <div class="field">
+                    <label for="fanSpeed">Fan Speed (%):</label>
+                    <input type="number" id="fanSpeed" min="0" max="100" step="5" value="100">
+                </div>
+                <div class="field">
                     <label for="printSpeed">Print Speed (mm/s):</label>
                     <input type="number" id="printSpeed" min="5" max="200" step="5" value="100">
                 </div>
@@ -141,18 +149,18 @@
             <div class="form-grid">
                 <div class="field">
                     <label for="minSpeed">Retraction speed (min, mm/s):</label>
-                    <input type="number" id="minSpeed" min="1" max="500" step="10" value="10">
+                    <input type="number" id="minSpeed" min="10" max="500" step="10" value="10">
                 </div>
                 <div class="field">
                     <label for="maxSpeed">Retraction speed (max, mm/s):</label>
-                    <input type="number" id="maxSpeed" min="1" max="500" step="10" value="100">
+                    <input type="number" id="maxSpeed" min="10" max="500" step="10" value="100">
                 </div>
                 <!-- Unretract Extra removed; handled by Pressure Advance or tuning outside this tool -->
             </div>
             <div style="margin-top: 1rem; padding: 1rem; background-color: #f0f0f0; border-radius: 4px;">
                 <p style="margin: 0; font-size: 0.95em;">
-                    <strong>Increment per row:</strong> <span id="distIncrement">0.2</span> mm distance &nbsp;|&nbsp; 
-                    <strong>Increment per column:</strong> <span id="speedIncrement">19</span> mm/s speed
+                    <strong>Distance Increment</strong> <span id="distIncrement">0.2</span> mm &nbsp;|&nbsp; 
+                    <strong>Speed Increment</strong> <span id="speedIncrement">19</span> mm/s
                 </p>
             </div>
         </section>
@@ -163,11 +171,11 @@
                 <summary><strong>Advanced Settings</strong></summary>
                 <div class="form-grid">
                     <div class="field">
-                        <label for="doeRows">DOE Rows:</label>
+                        <label for="doeRows">Distance Tests:</label>
                         <input type="number" id="doeRows" min="1" max="20" step="1" value="5">
                     </div>
                     <div class="field">
-                        <label for="doeColumns">DOE Columns:</label>
+                        <label for="doeColumns">Speed Tests:</label>
                         <input type="number" id="doeColumns" min="1" max="30" step="1" value="5">
                     </div>
                     <div class="field">

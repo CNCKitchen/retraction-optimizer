@@ -38,6 +38,8 @@ function getFormState() {
     minSpeed: minSpeed,
     maxSpeed: maxSpeed,
     flowFactor: numVal('flowFactor', null, 1.0),
+    firstLayerFanSpeed: numVal('firstLayerFanSpeed', null, 0),
+    fanSpeed: numVal('fanSpeed', null, 100),
     firstLayerSpeed: numVal('firstLayerSpeed', null, 30),
     printSpeed: numVal('printSpeed', null, 50),
     travelSpeed: numVal('travelSpeed', null, 150),
@@ -88,6 +90,8 @@ function setFormState(state) {
   if (state.minSpeed !== undefined) setIf('minSpeed', 'retractSpeed', state.minSpeed)
   if (state.maxSpeed !== undefined) setIf('maxSpeed', null, state.maxSpeed)
   if (state.flowFactor !== undefined) setIf('flowFactor', null, state.flowFactor)
+  if (state.firstLayerFanSpeed !== undefined) setIf('firstLayerFanSpeed', null, state.firstLayerFanSpeed)
+  if (state.fanSpeed !== undefined) setIf('fanSpeed', null, state.fanSpeed)
   if (state.firstLayerSpeed !== undefined) setIf('firstLayerSpeed', null, state.firstLayerSpeed)
   if (state.printSpeed !== undefined) setIf('printSpeed', null, state.printSpeed)
   if (state.travelSpeed !== undefined) setIf('travelSpeed', null, state.travelSpeed)
