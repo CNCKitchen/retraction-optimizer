@@ -1,6 +1,6 @@
 {
   "name": "Prusa MK3S+",
-  "description": "Original Prusa i3 MK3S+ with E3D V6 hotend",
+  "material": "PLA",
   "bedX": 250,
   "bedY": 210,
   "bedTemp": 60,
@@ -33,6 +33,8 @@
   "retractAccel": 2000,
   "travelAccel": 5000,
   "firstLayerPrintAccel": null,
+  "firstLayerFanSpeed": 0,
+  "fanSpeed": 100,
   "startGcode": "",
   "endGcode": ""
 }

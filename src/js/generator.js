@@ -156,6 +156,7 @@ export function generateGcodeFromForm(formState) {
 
   g.push("")
   g.push(`; === DOE Layer 1/${cfg.NUM_DOE_LAYERS} at Z=${zFirst.toFixed(3)}, speed=${cfg.FIRST_LAYER_SPEED}mm/s ===`)
+  g.push("G92 E0 ; reset extruder position")
   generateDoeLayer(g, cfg, {
     z: zFirst,
     originX, originY,
@@ -189,6 +190,7 @@ export function generateGcodeFromForm(formState) {
   if (cfg.NUM_DOE_LAYERS >= 2) {
     g.push("")
     g.push("; --- Printing labels for distances and speeds on second layer ---")
+    g.push("G92 E0 ; reset extruder position")
     labelPattern(g, cfg, {
       originX, originY,
       baseX0, baseY0,
@@ -222,6 +224,7 @@ export function generateGcodeFromForm(formState) {
     const z = zFirst + layerIdx * cfg.LAYER_HEIGHT
     g.push("")
     g.push(`; === DOE Layer ${layerIdx+1}/${cfg.NUM_DOE_LAYERS} at Z=${z.toFixed(3)}, speed=${cfg.PRINT_SPEED}mm/s ===`)
+    g.push("G92 E0 ; reset extruder position")
     generateDoeLayer(g, cfg, {
       z,
       originX, originY,

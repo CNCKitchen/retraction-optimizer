@@ -49,5 +49,7 @@ export function getPresetNames() {
 }
 
 export function getPresetDisplayName(presetKey) {
-  return PRESET_MANIFEST[presetKey]?.name || presetKey
+  const manifest = PRESET_MANIFEST[presetKey]
+  if (!manifest) return presetKey
+  return manifest.material ? `${manifest.name} - ${manifest.material}` : manifest.name
 }

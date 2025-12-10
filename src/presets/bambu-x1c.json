@@ -1,6 +1,6 @@
 {
   "name": "Bambu Lab X1C",
-  "description": "Bambu Lab X1 Carbon with their hotend",
+  "material": "PLA",
   "bedX": 256,
   "bedY": 256,
   "bedTemp": 65,
@@ -33,6 +33,8 @@
   "retractAccel": 4000,
   "travelAccel": 15000,
   "firstLayerPrintAccel": null,
+  "firstLayerFanSpeed": 0,
+  "fanSpeed": 100,
   "startGcode": "",
   "endGcode": ""
 }
