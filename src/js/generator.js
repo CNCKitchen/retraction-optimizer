@@ -260,6 +260,8 @@ function drawText(gcode, text, x, y, size, z, cfg) {
   const fTravel = cfg.TRAVEL_SPEED * 60.0
   const ePerMm = cfg.E_PER_MM
   let cursorX = x
+  let lastX = null
+  let lastY = null
 
   for (const ch of text) {
     if (ch === " ") {
@@ -278,15 +280,24 @@ function drawText(gcode, text, x, y, size, z, cfg) {
       const ex = cursorX + x2 * size
       const ey = y + y2 * size
 
-      gcode.push("; Label retract before travel")
-      gcode.push(avgRet.retract)
-      gcode.push(g1Move({ x: sx, y: sy, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
-      gcode.push("; Label deretract before stroke")
-      gcode.push(avgRet.deretract)
+      // Only retract if we need to travel (not continuing from previous segment end)
+      const needsTravel = lastX === null || lastY === null || 
+                          Math.abs(sx - lastX) > 0.001 || Math.abs(sy - lastY) > 0.001
+
+      if (needsTravel) {
+        gcode.push("; Label retract before travel")
+        gcode.push(avgRet.retract)
+        gcode.push(g1Move({ x: sx, y: sy, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+        gcode.push("; Label deretract before stroke")
+        gcode.push(avgRet.deretract)
+      }
 
       const length = Math.hypot(ex - sx, ey - sy)
       const e = length * ePerMm
       gcode.push(g1Move({ x: ex, y: ey, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+      
+      lastX = ex
+      lastY = ey
     }
     cursorX += CHAR_ADVANCE * size
   }
@@ -483,6 +494,7 @@ function generateDoeLayer(gcode, cfg, params) {
 
   // Offset DOE patterns up by one extrusion width to avoid overlapping with grid frame
   const doeYOffset = cfg.EXTRUSION_WIDTH
+  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, z)
   
   for (let r = 0; r < rows; r++) {
     const dist = distances[r]
@@ -496,7 +508,16 @@ function generateDoeLayer(gcode, cfg, params) {
       const yLine = baseYRow + rep * cfg.EXTRUSION_WIDTH
       if (rep === 0) xCurrent = originX
 
+      // Retract before travel to line start position
+      if (rep === 0 && r === 0) {
+        gcode.push("; DOE retract before first travel")
+        gcode.push(avgRet.retract)
+      }
       gcode.push(g1Move({ x: xCurrent, y: yLine, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+      if (rep === 0 && r === 0) {
+        gcode.push("; DOE deretract before first line")
+        gcode.push(avgRet.deretract)
+      }
       gcode.push(`; Row ${r+1}/${rows}, repetition ${rep+1}/${cfg.LINES_PER_PARAM}, dist=${dist.toFixed(3)}mm, dir=${repDir>0?"L->R":"R->L"}`)
 
       const colOrder = (repDir > 0)
