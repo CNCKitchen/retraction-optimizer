@@ -241,7 +241,7 @@ export function generateGcodeFromForm(formState) {
 
   // Final retraction before end G-code
   const finalZ = zFirst + (cfg.NUM_DOE_LAYERS - 1) * cfg.LAYER_HEIGHT
-  const finalRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, finalZ)
+  const finalRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, finalZ, cfg.TRAVEL_SPEED)
   g.push("")
   g.push("; Final retraction")
   g.push(finalRet.retract)
@@ -255,7 +255,7 @@ export function generateGcodeFromForm(formState) {
 }
 
 function drawText(gcode, text, x, y, size, z, cfg) {
-  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, z)
+  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, z, cfg.TRAVEL_SPEED)
   const fPrint = cfg.TEXT_PRINT_SPEED * 60.0
   const fTravel = cfg.TRAVEL_SPEED * 60.0
   const ePerMm = cfg.E_PER_MM
@@ -430,7 +430,7 @@ function generateGridFrameLayer(gcode, cfg, params) {
   const yMin = originY
   const yMax = originY + patternHeight
 
-  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, z)
+  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, z, cfg.TRAVEL_SPEED)
 
   gcode.push("; Grid frame: outer rectangle")
   gcode.push("; Grid retract before travel to outer start")
@@ -494,7 +494,7 @@ function generateDoeLayer(gcode, cfg, params) {
 
   // Offset DOE patterns up by one extrusion width to avoid overlapping with grid frame
   const doeYOffset = cfg.EXTRUSION_WIDTH
-  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, z)
+  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, z, cfg.TRAVEL_SPEED)
   
   for (let r = 0; r < rows; r++) {
     const dist = distances[r]
@@ -526,7 +526,7 @@ function generateDoeLayer(gcode, cfg, params) {
 
       for (const c of colOrder) {
         const speed = speeds[c]
-        const ret = retractLinesDoe(dist, speed, cfg.Z_HOP, z)
+        const ret = retractLinesDoe(dist, speed, cfg.Z_HOP, z, cfg.TRAVEL_SPEED)
         gcode.push(`;   Col ${c+1}/${cols}, speed=${speed.toFixed(1)}mm/s`)
 
         let xExtrudeEnd = xCurrent + repDir * cfg.SEGMENT_LENGTH

@@ -49,16 +49,17 @@ export function applyPlaceholders(s, bedTemp, hotendTemp) {
     .replace(/\[hotend_temperature\]/g, String(hotendTemp))
 }
 
-export function retractLinesDoe(dist, speed, zHop = 0, currentZ = 0) {
+export function retractLinesDoe(dist, speed, zHop = 0, currentZ = 0, travelSpeed = 150) {
   const f = speed * 60.0
+  const fTravel = travelSpeed * 60.0
   const retractLines = [`G1 E${(-dist).toFixed(5)} F${f.toFixed(0)}`]
   if (zHop > 0) {
     const zHopped = currentZ + zHop
-    retractLines.push(`G1 Z${zHopped.toFixed(3)} F300 ; z-hop up`)
+    retractLines.push(`G1 Z${zHopped.toFixed(3)} F${fTravel.toFixed(0)} ; z-hop up`)
   }
   const deretractLines = []
   if (zHop > 0) {
-    deretractLines.push(`G1 Z${currentZ.toFixed(3)} F300 ; z-hop down`)
+    deretractLines.push(`G1 Z${currentZ.toFixed(3)} F${fTravel.toFixed(0)} ; z-hop down`)
   }
   deretractLines.push(`G1 E${dist.toFixed(5)} F${f.toFixed(0)}`)
   return {
@@ -67,17 +68,18 @@ export function retractLinesDoe(dist, speed, zHop = 0, currentZ = 0) {
   }
 }
 
-export function retractLinesAvg(avgDist, avgSpeed, zHop = 0, currentZ = 0) {
+export function retractLinesAvg(avgDist, avgSpeed, zHop = 0, currentZ = 0, travelSpeed = 150) {
   const f = avgSpeed * 60.0
+  const fTravel = travelSpeed * 60.0
   const d = avgDist
   const retractLines = [`G1 E${(-d).toFixed(5)} F${f.toFixed(0)}`]
   if (zHop > 0) {
     const zHopped = currentZ + zHop
-    retractLines.push(`G1 Z${zHopped.toFixed(3)} F300 ; z-hop up`)
+    retractLines.push(`G1 Z${zHopped.toFixed(3)} F${fTravel.toFixed(0)} ; z-hop up`)
   }
   const deretractLines = []
   if (zHop > 0) {
-    deretractLines.push(`G1 Z${currentZ.toFixed(3)} F300 ; z-hop down`)
+    deretractLines.push(`G1 Z${currentZ.toFixed(3)} F${fTravel.toFixed(0)} ; z-hop down`)
   }
   deretractLines.push(`G1 E${d.toFixed(5)} F${f.toFixed(0)}`)
   return {
