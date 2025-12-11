@@ -9,6 +9,7 @@
   "hotendTemp": 210,
   "minSpeed": 20,
   "maxSpeed": 100,
+  "zHop": 0,
   "flowFactor": 1.0,
   "firstLayerSpeed": 20,
   "printSpeed": 60,

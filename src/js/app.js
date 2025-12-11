@@ -37,6 +37,7 @@ function getFormState() {
     hotendTemp: numVal('hotendTemp', null, 210),
     minSpeed: minSpeed,
     maxSpeed: maxSpeed,
+    zHop: numVal('zHop', null, 0),
     flowFactor: numVal('flowFactor', null, 1.0),
     firstLayerFanSpeed: numVal('firstLayerFanSpeed', null, 0),
     fanSpeed: numVal('fanSpeed', null, 100),
@@ -89,6 +90,7 @@ function setFormState(state) {
   if (state.hotendTemp !== undefined) setIf('hotendTemp', null, state.hotendTemp)
   if (state.minSpeed !== undefined) setIf('minSpeed', 'retractSpeed', state.minSpeed)
   if (state.maxSpeed !== undefined) setIf('maxSpeed', null, state.maxSpeed)
+  if (state.zHop !== undefined) setIf('zHop', null, state.zHop)
   if (state.flowFactor !== undefined) setIf('flowFactor', null, state.flowFactor)
   if (state.firstLayerFanSpeed !== undefined) setIf('firstLayerFanSpeed', null, state.firstLayerFanSpeed)
   if (state.fanSpeed !== undefined) setIf('fanSpeed', null, state.fanSpeed)

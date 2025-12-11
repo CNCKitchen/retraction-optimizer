@@ -26,6 +26,7 @@
   "linesPerParam": 12,
   "rows": 5,
   "cols": 5,
+  "zHop": 0,
   "segLen": 15,
   "travelLen": 15,
   "numLayers": 5,

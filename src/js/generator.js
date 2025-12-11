@@ -19,6 +19,7 @@ export function generateGcodeFromForm(formState) {
     NUM_DOE_LAYERS: formState.numLayers,
     SEGMENT_LENGTH: formState.segLen,
     TRAVEL_LENGTH: formState.travelLen,
+    Z_HOP: formState.zHop || 0,
     FLOW_FACTOR: formState.flowFactor,
     BED_TEMP: formState.bedTemp,
     HOTEND_TEMP: formState.hotendTemp,
@@ -239,7 +240,8 @@ export function generateGcodeFromForm(formState) {
   }
 
   // Final retraction before end G-code
-  const finalRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED)
+  const finalZ = zFirst + (cfg.NUM_DOE_LAYERS - 1) * cfg.LAYER_HEIGHT
+  const finalRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, finalZ)
   g.push("")
   g.push("; Final retraction")
   g.push(finalRet.retract)
@@ -252,7 +254,8 @@ export function generateGcodeFromForm(formState) {
   return g.join("\n") + "\n"
 }
 
-function drawText(gcode, text, x, y, size, z, cfg, avgRet) {
+function drawText(gcode, text, x, y, size, z, cfg) {
+  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, z)
   const fPrint = cfg.TEXT_PRINT_SPEED * 60.0
   const fTravel = cfg.TRAVEL_SPEED * 60.0
   const ePerMm = cfg.E_PER_MM
@@ -277,7 +280,7 @@ function drawText(gcode, text, x, y, size, z, cfg, avgRet) {
 
       gcode.push("; Label retract before travel")
       gcode.push(avgRet.retract)
-      gcode.push(g1Move({ x: sx, y: sy, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+      gcode.push(g1Move({ x: sx, y: sy, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
       gcode.push("; Label deretract before stroke")
       gcode.push(avgRet.deretract)
 
@@ -416,12 +419,12 @@ function generateGridFrameLayer(gcode, cfg, params) {
   const yMin = originY
   const yMax = originY + patternHeight
 
-  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED)
+  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, z)
 
   gcode.push("; Grid frame: outer rectangle")
   gcode.push("; Grid retract before travel to outer start")
   gcode.push(avgRet.retract)
-  gcode.push(g1Move({ x: xMin, y: yMin, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  gcode.push(g1Move({ x: xMin, y: yMin, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
   gcode.push("; Grid deretract before outer rectangle")
   gcode.push(avgRet.deretract)
 
@@ -445,7 +448,7 @@ function generateGridFrameLayer(gcode, cfg, params) {
     const x = originX + c * cellSpanX
     gcode.push("; Grid retract before vertical travel")
     gcode.push(avgRet.retract)
-    gcode.push(g1Move({ x, y: yMin, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+    gcode.push(g1Move({ x, y: yMin, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
     gcode.push("; Grid deretract before vertical line")
     gcode.push(avgRet.deretract)
     length = yMax - yMin
@@ -458,7 +461,7 @@ function generateGridFrameLayer(gcode, cfg, params) {
     const y = originY + r * rowBlockHeight
     gcode.push("; Grid retract before horizontal travel")
     gcode.push(avgRet.retract)
-    gcode.push(g1Move({ x: xMin, y, z, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+    gcode.push(g1Move({ x: xMin, y, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
     gcode.push("; Grid deretract before horizontal line")
     gcode.push(avgRet.deretract)
     length = xMax - xMin
@@ -502,7 +505,7 @@ function generateDoeLayer(gcode, cfg, params) {
 
       for (const c of colOrder) {
         const speed = speeds[c]
-        const ret = retractLinesDoe(dist, speed)
+        const ret = retractLinesDoe(dist, speed, cfg.Z_HOP, z)
         gcode.push(`;   Col ${c+1}/${cols}, speed=${speed.toFixed(1)}mm/s`)
 
         let xExtrudeEnd = xCurrent + repDir * cfg.SEGMENT_LENGTH
@@ -539,8 +542,6 @@ function labelPattern(gcode, cfg, params) {
     labelGapX, bottomLabelMargin, zLabel
   } = params
 
-  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED)
-
   distLevels.forEach((dist, r) => {
     const text = dist.toFixed(2) + "mm"
     const textWidth = text.length * CHAR_ADVANCE * rowFontSize
@@ -551,7 +552,7 @@ function labelPattern(gcode, cfg, params) {
     const xText = Math.max(xTextNominal, minXText)
 
     gcode.push(`; Text label for distance row ${r+1}: ${text}`)
-    drawText(gcode, text, xText, yText, rowFontSize, zLabel, cfg, avgRet)
+    drawText(gcode, text, xText, yText, rowFontSize, zLabel, cfg)
   })
 
   const cellSpanX = cfg.SEGMENT_LENGTH + cfg.TRAVEL_LENGTH
@@ -565,6 +566,6 @@ function labelPattern(gcode, cfg, params) {
     const xText = xCenterTravel - approxWidth / 2.0
 
     gcode.push(`; Text label for speed col ${c+1}: ${text}`)
-    drawText(gcode, text, xText, yTextBase, speedFontSize, zLabel, cfg, avgRet)
+    drawText(gcode, text, xText, yTextBase, speedFontSize, zLabel, cfg)
   })
 }
