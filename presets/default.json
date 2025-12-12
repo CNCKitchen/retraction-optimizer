@@ -1,6 +1,6 @@
 {
   "name": "Default",
-  "description": "Generic Klipper 3D printer with standard settings",
+  "material": "Generic",
   "bedX": 200,
   "bedY": 200,
   "bedTemp": 60,
@@ -9,6 +9,7 @@
   "hotendTemp": 230,
   "minSpeed": 10,
   "maxSpeed": 80,
+  "zHop": 0,
   "flowFactor": 1.0,
   "firstLayerSpeed": 25,
   "printSpeed": 50,
@@ -33,6 +34,8 @@
   "retractAccel": 2500,
   "travelAccel": 7000,
   "firstLayerPrintAccel": 500,
+  "firstLayerFanSpeed": 0,
+  "fanSpeed": 100,
   "startGcode": "PRINT_START EXTRUDER=[hotend_temperature] BED=[bed_temperature]",
   "endGcode": "PRINT_END"
 }

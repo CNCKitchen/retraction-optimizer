@@ -2,21 +2,25 @@
   {
     "id": "default",
     "name": "Default",
+    "material": "Generic",
     "file": "default.json"
   },
   {
     "id": "prusa-mk3s",
     "name": "Prusa MK3S+",
+    "material": "PLA",
     "file": "prusa-mk3s.json"
   },
   {
     "id": "bambu-x1c",
     "name": "Bambu Lab X1C",
+    "material": "PLA",
     "file": "bambu-x1c.json"
   },
   {
     "id": "prusa-coreone",
     "name": "Prusa Core One",
+    "material": "PLA",
     "file": "prusa-coreone.json"
   }
 ]
