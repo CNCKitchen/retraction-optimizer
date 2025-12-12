@@ -206,16 +206,43 @@ function updateDoeIncrements() {
   const maxDist = parseFloat(document.getElementById('maxDist')?.value || 1.2)
   const minSpeed = parseFloat(document.getElementById('minSpeed')?.value || 10)
   const maxSpeed = parseFloat(document.getElementById('maxSpeed')?.value || 100)
+  const retractAccel = parseFloat(document.getElementById('retractAccel')?.value || 2500)
   const rows = parseInt(document.getElementById('doeRows')?.value || 5)
   const cols = parseInt(document.getElementById('doeColumns')?.value || 5)
   
   const distIncrement = rows > 1 ? ((maxDist - minDist) / (rows - 1)).toFixed(2) : 0
   const speedIncrement = cols > 1 ? ((maxSpeed - minSpeed) / (cols - 1)).toFixed(1) : 0
   
+  // Calculate realistic end speed using kinematic equation: v² = 2ad
+  // Starting from zero, how fast can the extruder accelerate over the max retraction distance
+  const vEndSquared = 2 * retractAccel * maxDist
+  const realisticEndSpeed = Math.sqrt(vEndSquared)
+  const isSpeedTooLow = realisticEndSpeed < maxSpeed
+  
   const distSpan = document.getElementById('distIncrement')
   const speedSpan = document.getElementById('speedIncrement')
+  const endSpeedSpan = document.getElementById('realisticEndSpeed')
+  const infoBox = document.getElementById('doeInfoBox')
+  
   if (distSpan) distSpan.textContent = distIncrement
   if (speedSpan) speedSpan.textContent = speedIncrement
+  if (endSpeedSpan) {
+    endSpeedSpan.textContent = Math.round(realisticEndSpeed)
+    // Highlight in red if realistic speed is too low
+    const endSpeedContainer = document.getElementById('realisticEndSpeedContainer')
+    if (endSpeedContainer) {
+      if (isSpeedTooLow) {
+        endSpeedContainer.style.backgroundColor = '#ffcccc'
+        endSpeedContainer.style.padding = '2px 6px'
+        endSpeedContainer.style.borderRadius = '3px'
+        endSpeedContainer.style.border = '1px solid #cc0000'
+      } else {
+        endSpeedContainer.style.backgroundColor = 'transparent'
+        endSpeedContainer.style.padding = '0'
+        endSpeedContainer.style.border = 'none'
+      }
+    }
+  }
 }
 
 function handleGenerateGcode() {
@@ -303,7 +330,7 @@ export async function initializeApp() {
   document.getElementById('upload-json-input').addEventListener('change', handleUploadJson)
   
   // Add listeners for DOE increment updates
-  const doeInputs = ['minDist', 'maxDist', 'minSpeed', 'maxSpeed', 'doeRows', 'doeColumns']
+  const doeInputs = ['minDist', 'maxDist', 'minSpeed', 'maxSpeed', 'doeRows', 'doeColumns', 'retractAccel']
   doeInputs.forEach(id => {
     const el = document.getElementById(id)
     if (el) {

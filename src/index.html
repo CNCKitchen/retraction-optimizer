@@ -162,10 +162,11 @@
                 </div>
                 <!-- Unretract Extra removed; handled by Pressure Advance or tuning outside this tool -->
             </div>
-            <div style="margin-top: 1rem; padding: 1rem; background-color: #f0f0f0; border-radius: 4px;">
+            <div id="doeInfoBox" style="margin-top: 1rem; padding: 1rem; background-color: #f0f0f0; border-radius: 4px;">
                 <p style="margin: 0; font-size: 0.95em;">
                     <strong>Distance Increment</strong> <span id="distIncrement">0.2</span> mm &nbsp;|&nbsp; 
-                    <strong>Speed Increment</strong> <span id="speedIncrement">19</span> mm/s
+                    <strong>Speed Increment</strong> <span id="speedIncrement">19</span> mm/s &nbsp;|&nbsp; 
+                    <span id="realisticEndSpeedContainer" style="display: inline-block; transition: all 0.3s;"><strong>Realistic max. Retraction Speed (w.o. Jerk)</strong> <span id="realisticEndSpeed">0</span> mm/s</span>
                 </p>
             </div>
         </section>
