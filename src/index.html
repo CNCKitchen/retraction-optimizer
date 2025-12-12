@@ -166,7 +166,11 @@
                 <p style="margin: 0; font-size: 0.95em;">
                     <strong>Distance Increment</strong> <span id="distIncrement">0.2</span> mm &nbsp;|&nbsp; 
                     <strong>Speed Increment</strong> <span id="speedIncrement">19</span> mm/s &nbsp;|&nbsp; 
-                    <span id="realisticEndSpeedContainer" style="display: inline-block; transition: all 0.3s;"><strong>Realistic max. Retraction Speed (w.o. Jerk)</strong> <span id="realisticEndSpeed">0</span> mm/s</span>
+                    <span id="realisticEndSpeedContainer" style="display: inline-block; transition: all 0.3s;">
+                        <span style="display: inline-block; width: 14px; height: 14px; line-height: 14px; text-align: center; border-radius: 50%; background-color: #666; color: white; font-size: 10px; font-weight: bold; cursor: help; margin-left: 2px;" title="This is the maximum speed the extruder will reach with the set retraction acceleration and maximum retraction distance, calculated using v² = 2ad. If this value is lower than your maximum retraction speed, the extruder cannot reach the target speed.">i</span>
+                        <strong>Realistic max. Retraction Speed (w.o. Jerk)</strong>
+                        <span id="realisticEndSpeed">0</span> mm/s
+                    </span>
                 </p>
             </div>
         </section>
