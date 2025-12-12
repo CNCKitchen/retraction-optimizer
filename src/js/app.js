@@ -160,6 +160,8 @@ function handleLoadPreset() {
   if (presetName) document.getElementById('presetName').value = presetName
   if (presetDesc) document.getElementById('presetDescription').value = presetDesc
   
+  updateDoeIncrements()
+  
   presetStatus.textContent = `Loaded: ${presetName || 'Preset'}`
   presetStatus.style.color = '#059669'
 }
@@ -178,6 +180,8 @@ function handleUploadJson(event) {
       const presetName = json.name || json.presetName
       const presetDesc = json.description || json.presetDescription
       if (presetName) document.getElementById('presetName').value = presetName
+      
+      updateDoeIncrements()
       if (presetDesc) document.getElementById('presetDescription').value = presetDesc
       
       presetStatus.textContent = `Loaded: ${presetName || 'Custom settings'}`

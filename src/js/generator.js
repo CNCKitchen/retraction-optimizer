@@ -143,6 +143,7 @@ export function generateGcodeFromForm(formState) {
 
   g.push(g1Move({ z: zFirst, f: cfg.TRAVEL_SPEED * 60.0, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
 
+  // Print frames first (label base L-shape and grid frame)
   generateLabelBaseLayer(g, cfg, {
     baseX0, baseY0, originX, originY,
     leftLabelArea, bottomLabelMargin,
@@ -155,19 +156,11 @@ export function generateGcodeFromForm(formState) {
     rowBlockHeight, patternWidth
   })
 
-  g.push("")
-  g.push(`; === DOE Layer 1/${cfg.NUM_DOE_LAYERS} at Z=${zFirst.toFixed(3)}, speed=${cfg.FIRST_LAYER_SPEED}mm/s ===`)
-  g.push("G92 E0 ; reset extruder position")
-  generateDoeLayer(g, cfg, {
-    z: zFirst,
-    originX, originY,
-    rows: cfg.ROWS,
-    cols: cfg.COLS,
-    distances: distLevels,
-    speeds: speedLevels,
-    rowBlockHeight,
-    patternWidth,
-    printSpeed: cfg.FIRST_LAYER_SPEED
+  // Print vertical strips where DOE patterns will extrude (leaving gaps for travel moves)
+  generateDoeVerticalStrips(g, cfg, {
+    z: zFirst, originX, originY,
+    rows: cfg.ROWS, cols: cfg.COLS,
+    rowBlockHeight, patternWidth
   })
 
   // Restore normal accelerations and fan speed after first layer (before second-layer labels/printing)
@@ -188,9 +181,10 @@ export function generateGcodeFromForm(formState) {
     }
   }
 
-  if (cfg.NUM_DOE_LAYERS >= 2) {
+  // DOE patterns start on layer 2 (layer 1 is just base strips for adhesion)
+  if (cfg.NUM_DOE_LAYERS >= 1) {
     g.push("")
-    g.push("; --- Printing labels for distances and speeds on second layer ---")
+    g.push("; --- Printing labels for distances and speeds on layer 2 ---")
     g.push("G92 E0 ; reset extruder position")
     labelPattern(g, cfg, {
       originX, originY,
@@ -207,7 +201,7 @@ export function generateGcodeFromForm(formState) {
     })
 
     g.push("")
-    g.push(`; === DOE Layer 2/${cfg.NUM_DOE_LAYERS} at Z=${zLabels.toFixed(3)}, speed=${cfg.PRINT_SPEED}mm/s ===`)
+    g.push(`; === DOE Pattern Layer 1/${cfg.NUM_DOE_LAYERS} at Z=${zLabels.toFixed(3)}, speed=${cfg.PRINT_SPEED}mm/s ===`)
     generateDoeLayer(g, cfg, {
       z: zLabels,
       originX, originY,
@@ -221,10 +215,10 @@ export function generateGcodeFromForm(formState) {
     })
   }
 
-  for (let layerIdx = 2; layerIdx < cfg.NUM_DOE_LAYERS; layerIdx++) {
-    const z = zFirst + layerIdx * cfg.LAYER_HEIGHT
+  for (let layerIdx = 1; layerIdx < cfg.NUM_DOE_LAYERS; layerIdx++) {
+    const z = zLabels + layerIdx * cfg.LAYER_HEIGHT
     g.push("")
-    g.push(`; === DOE Layer ${layerIdx+1}/${cfg.NUM_DOE_LAYERS} at Z=${z.toFixed(3)}, speed=${cfg.PRINT_SPEED}mm/s ===`)
+    g.push(`; === DOE Pattern Layer ${layerIdx+1}/${cfg.NUM_DOE_LAYERS} at Z=${z.toFixed(3)}, speed=${cfg.PRINT_SPEED}mm/s ===`)
     g.push("G92 E0 ; reset extruder position")
     generateDoeLayer(g, cfg, {
       z,
@@ -406,12 +400,11 @@ function generateLabelBaseLayer(gcode, cfg, params) {
   const leftBarHeight = (originY + patternHeight) - leftBarStartY
   const leftFillHeight = Math.ceil(leftBarHeight / lineSpacing) * lineSpacing
   
-  // Bottom-left corner piece (inset by gap on all sides)
-  fillRect(cornerX0 + gap, cornerY0 + gap, cornerWidth - 2*gap, cornerFillHeight, "L-corner fill")
+  // Merge corner and bottom into one continuous horizontal bar for smooth printing
+  const bottomMergedWidth = cornerWidth + bottomWidth - 2*gap  // Full width from left edge to right edge
+  fillRect(cornerX0 + gap, cornerY0 + gap, bottomMergedWidth, cornerFillHeight, "L-bottom fill (with corner)")
   // Left vertical bar (inset from left and right, starts where corner ends)
   fillRect(leftX0 + gap, leftBarStartY, leftWidth - 2*gap, leftFillHeight, "L-left fill")
-  // Bottom horizontal bar (inset from bottom and top, starts at originX)
-  fillRect(bottomX0, bottomY0 + gap, bottomWidth - gap, bottomFillHeight, "L-bottom fill")
 }
 
 function generateGridFrameLayer(gcode, cfg, params) {
@@ -454,17 +447,30 @@ function generateGridFrameLayer(gcode, cfg, params) {
   e = length * ePerMm
   gcode.push(g1Move({ x: xMin, y: yMin, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
 
-  gcode.push("; Grid frame: vertical lines between columns")
-  for (let c = 1; c < cols; c++) {
-    const x = originX + c * cellSpanX
-    gcode.push("; Grid retract before vertical travel")
+  gcode.push("; Grid frame: vertical lines at segment starts and ends")
+  // Print vertical lines at the start and end of each segment
+  for (let c = 0; c <= cols; c++) {
+    // Vertical line at the start of each segment (or end of previous segment)
+    const xStart = originX + c * cellSpanX
+    gcode.push(`; Grid vertical line at segment ${c} start (X=${xStart.toFixed(3)})`)
     gcode.push(avgRet.retract)
-    gcode.push(g1Move({ x, y: yMin, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
-    gcode.push("; Grid deretract before vertical line")
+    gcode.push(g1Move({ x: xStart, y: yMin, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
     gcode.push(avgRet.deretract)
     length = yMax - yMin
     e = length * ePerMm
-    gcode.push(g1Move({ x, y: yMax, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+    gcode.push(g1Move({ x: xStart, y: yMax, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+    
+    // Vertical line at the end of each segment (except after the last one, since it's the same as next start)
+    if (c < cols) {
+      const xEnd = originX + c * cellSpanX + cfg.SEGMENT_LENGTH
+      gcode.push(`; Grid vertical line at segment ${c} end (X=${xEnd.toFixed(3)})`)
+      gcode.push(avgRet.retract)
+      gcode.push(g1Move({ x: xEnd, y: yMin, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+      gcode.push(avgRet.deretract)
+      length = yMax - yMin
+      e = length * ePerMm
+      gcode.push(g1Move({ x: xEnd, y: yMax, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+    }
   }
 
   gcode.push("; Grid frame: horizontal lines between rows")
@@ -478,6 +484,114 @@ function generateGridFrameLayer(gcode, cfg, params) {
     length = xMax - xMin
     e = length * ePerMm
     gcode.push(g1Move({ x: xMax, y, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+  }
+}
+
+function generateDoeVerticalStrips(gcode, cfg, params) {
+  const { z, originX, originY, rows, cols, rowBlockHeight, patternWidth } = params
+  gcode.push(`; --- DOE vertical strips (only where extrusion occurs) at Z=${z.toFixed(3)} ---`)
+  
+  const fPrint = cfg.FIRST_LAYER_SPEED * 60.0
+  const fTravel = cfg.TRAVEL_SPEED * 60.0
+  const ePerMm = cfg.E_PER_MM
+  const lineSpacing = cfg.EXTRUSION_WIDTH
+  const doeYOffset = cfg.EXTRUSION_WIDTH  // Same offset as DOE patterns
+  
+  const avgRet = retractLinesAvg(cfg.AVG_RETRACT_DIST, cfg.AVG_RETRACT_SPEED, cfg.Z_HOP, z, cfg.TRAVEL_SPEED)
+  
+  // Add extra extrusion width to pattern height to match the extended frame
+  const patternHeight = rows * rowBlockHeight - cfg.ROW_GAP + cfg.EXTRUSION_WIDTH
+  
+  // Each column has multiple extrusion segments per row
+  // Each row has LINES_PER_PARAM repetition lines
+  // Pattern: [segment] [gap for travel] [segment] [gap] ... [segment] [final segment]
+  const cellSpanX = cfg.SEGMENT_LENGTH + cfg.TRAVEL_LENGTH
+  
+  // Calculate how many vertical strips we need per column
+  // Each column has: initial segment + (LINES_PER_PARAM segments with travel gaps between them) + final segment
+  // But they're all at the same X positions for each column
+  
+  // For each column: we have segments at the start, then alternating (segment, travel gap) pattern
+  for (let c = 0; c < cols; c++) {
+    const colStartX = originX + c * cellSpanX
+    
+    // Within each column, print vertical strips for each segment position
+    // Pattern per column: [segment at colStartX] ... then for each line: [travel gap] [segment]
+    // So we have: 1 initial segment + cols segments = (cols + 1) segments per line
+    
+    // Initial segment strip (at the start of each column)
+    const stripX = colStartX
+    const stripWidth = cfg.SEGMENT_LENGTH
+    const stripHeight = patternHeight
+    const stripY0 = originY
+    
+    gcode.push(`; Strip for column ${c+1}/${cols} segment area`)
+    
+    // Calculate number of lines to fill the height
+    const nLines = Math.round(stripHeight / lineSpacing)
+    
+    for (let i = 0; i < nLines; i++) {
+      const y = stripY0 + i * lineSpacing
+      const direction = i % 2  // Alternate direction each line
+      
+      if (i === 0 && c === 0) {
+        // First strip, first line - need to travel and deretract
+        gcode.push("; Strip retract before first travel")
+        gcode.push(avgRet.retract)
+      } else if (i === 0) {
+        // First line of a new strip - retract before moving to it
+        gcode.push("; Strip retract before travel to next strip")
+        gcode.push(avgRet.retract)
+      }
+      
+      const xStart = direction === 0 ? stripX : stripX + stripWidth
+      const xEnd = direction === 0 ? stripX + stripWidth : stripX
+      
+      gcode.push(g1Move({ x: xStart, y, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+      
+      if (i === 0) {
+        gcode.push("; Strip deretract before printing")
+        gcode.push(avgRet.deretract)
+      }
+      
+      const length = Math.abs(xEnd - xStart)
+      const e = length * ePerMm
+      gcode.push(g1Move({ x: xEnd, y, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+    }
+  }
+  
+  // Final segment strip (after the last column)
+  const finalStripX = originX + cols * cellSpanX
+  const finalStripWidth = cfg.SEGMENT_LENGTH
+  const finalStripHeight = patternHeight
+  const finalStripY0 = originY
+  
+  gcode.push(`; Final strip after all columns`)
+  
+  const nLinesFinal = Math.round(finalStripHeight / lineSpacing)
+  
+  for (let i = 0; i < nLinesFinal; i++) {
+    const y = finalStripY0 + i * lineSpacing
+    const direction = i % 2
+    
+    if (i === 0) {
+      gcode.push("; Final strip retract before travel")
+      gcode.push(avgRet.retract)
+    }
+    
+    const xStart = direction === 0 ? finalStripX : finalStripX + finalStripWidth
+    const xEnd = direction === 0 ? finalStripX + finalStripWidth : finalStripX
+    
+    gcode.push(g1Move({ x: xStart, y, f: fTravel, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
+    
+    if (i === 0) {
+      gcode.push("; Final strip deretract before printing")
+      gcode.push(avgRet.deretract)
+    }
+    
+    const length = Math.abs(xEnd - xStart)
+    const e = length * ePerMm
+    gcode.push(g1Move({ x: xEnd, y, e, f: fPrint, bedX: cfg.BED_SIZE_X, bedY: cfg.BED_SIZE_Y }))
   }
 }
 
